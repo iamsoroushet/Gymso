@@ -1,5 +1,5 @@
-const CACHE="gymso-v1";
-const FILES=["./","./index.html","./manifest.json","./icons/icon-180.png","./icons/icon-192.png","./icons/icon-512.png"];
+const CACHE="gymso-batch1-v2";
+const FILES=["./","./index.html","./manifest.json","./icons/icon-180.png","./icons/icon-192.png","./icons/icon-512.png","./exercise-images/bench-press.webp","./exercise-images/incline-dumbbell-press.webp","./exercise-images/dumbbell-overhead-press.webp","./exercise-images/lateral-raise.webp","./exercise-images/lat-pulldown.webp","./exercise-images/seated-cable-row.webp","./exercise-images/bent-over-barbell-row.webp","./exercise-images/back-squat.webp","./exercise-images/romanian-deadlift.webp","./exercise-images/leg-press.webp"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
-self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
+self.addEventListener("activate",e=>e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()])));
 self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(n=>{const c=n.clone();caches.open(CACHE).then(k=>k.put(e.request,c));return n}).catch(()=>caches.match("./index.html"))))});

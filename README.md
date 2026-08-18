@@ -1,5 +1,17 @@
-# Gymso
+# Gymso — Batch 1 exercise library
 
-Static installable gym-workout PWA.
+This build replaces the old animated/stick-figure previews with the approved static exercise-guide template.
 
-Deploy the contents of this folder to any static host. On iPhone, open the deployed URL in Safari, then use Share → Add to Home Screen.
+Batch 1 includes:
+- Bench Press
+- Incline Dumbbell Press
+- Dumbbell Overhead Press
+- Lateral Raise
+- Lat Pulldown
+- Seated Cable Row
+- Bent-Over Barbell Row
+- Back Squat
+- Romanian Deadlift
+- Leg Press (45°)
+
+Each guide shows the movement plus primary muscles in black and secondary muscles in gray.

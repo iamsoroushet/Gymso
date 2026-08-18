@@ -24,7 +24,7 @@
     .tabs{display:flex;gap:8px;overflow:auto;padding-bottom:18px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
     .chip{flex:0 0 auto;border:1px solid var(--ink);border-radius:999px;background:#fff;padding:9px 13px;font-size:.82rem;font-weight:600}.chip.active{background:var(--ink);color:#fff}
     .detail{border-top:1px solid var(--line);padding-top:22px}.detailhead{display:flex;justify-content:space-between;gap:18px}
-    .stage{margin:20px 0 26px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);min-height:300px;display:grid;place-items:center;overflow:hidden}.stage svg{width:min(100%,560px)}
+    .stage{margin:20px 0 26px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);min-height:300px;display:grid;place-items:center;overflow:hidden}.stage svg{width:min(100%,560px)}.stage img{display:block;width:100%;height:auto;max-height:760px;object-fit:contain;background:#fff}
     .block{border-top:1px solid var(--line);padding:20px 0}.lastset{padding:10px 0;border-top:1px solid var(--line);font-size:1.02rem}.lastset:first-child{border-top:0}
     .thead,.setrow{display:grid;grid-template-columns:42px 1fr 1fr 42px;gap:10px;align-items:center}.thead{font-size:.67rem;letter-spacing:.11em;font-weight:700;padding-bottom:8px}.setrow{border-top:1px solid var(--line);padding:10px 0}
     .setrow input{width:100%;border:1px solid #bdbdbd;border-radius:10px;padding:10px 8px;text-align:center;font-size:1.05rem;background:#fff}.setrow input:focus{outline:2px solid var(--ink);outline-offset:1px}
@@ -34,7 +34,7 @@
     nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,760px);display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,.96);border-top:1px solid var(--line);padding:10px 14px calc(9px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)}
     .nav{border:0;background:transparent;color:var(--muted);font-size:.61rem;font-weight:700;display:grid;gap:4px;justify-items:center}.nav b{font-size:1.35rem;font-weight:400}.nav.active{color:var(--ink)}
     .search{display:grid;gap:7px;margin-bottom:20px}.search span{font-size:.68rem;letter-spacing:.11em;font-weight:700}.search input{border:0;border-bottom:1px solid var(--ink);padding:12px 0;outline:none;font-size:1.02rem}
-    .list{border-top:1px solid var(--line)}.exercise{width:100%;display:grid;grid-template-columns:84px 1fr 24px;gap:14px;align-items:center;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:14px 0}.thumb{width:84px;height:68px}.thumb svg{width:100%;height:100%}.exercise h3{font-size:1rem;margin-bottom:5px}.exercise p{color:var(--muted);font-size:.82rem}
+    .list{border-top:1px solid var(--line)}.exercise{width:100%;display:grid;grid-template-columns:84px 1fr 24px;gap:14px;align-items:center;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:14px 0}.thumb{width:84px;height:68px}.thumb svg{width:100%;height:100%}.thumb img{width:100%;height:100%;object-fit:cover;object-position:center 18%;background:#fff}.exercise h3{font-size:1rem;margin-bottom:5px}.exercise p{color:var(--muted);font-size:.82rem}
     .history{padding:16px 0;border-bottom:1px solid var(--line)}.history h3{margin-bottom:6px}.history p{font-size:.85rem;color:var(--muted)}
     dialog{width:min(100% - 24px,720px);height:min(88vh,820px);border:1px solid var(--ink);border-radius:18px;padding:20px;background:#fff}dialog::backdrop{background:rgba(0,0,0,.28);backdrop-filter:blur(3px)}
     .dialoghead{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px}.dialoghead h2{font-size:2rem}.dialoglist{max-height:calc(88vh - 180px);overflow:auto}
@@ -134,17 +134,16 @@
 
 <script>
 const EX=[
-{id:"bench",name:"Bench Press",equipment:"Barbell",muscle:"Chest",art:"bench"},
-{id:"incline",name:"Incline Dumbbell Press",equipment:"Dumbbells",muscle:"Chest",art:"press"},
-{id:"squat",name:"Back Squat",equipment:"Barbell",muscle:"Legs",art:"squat"},
-{id:"deadlift",name:"Deadlift",equipment:"Barbell",muscle:"Posterior Chain",art:"hinge"},
-{id:"row",name:"Bent-Over Row",equipment:"Barbell",muscle:"Back",art:"row"},
-{id:"pulldown",name:"Lat Pulldown",equipment:"Cable",muscle:"Back",art:"pulldown"},
-{id:"ohp",name:"Overhead Press",equipment:"Barbell",muscle:"Shoulders",art:"press"},
-{id:"lateral",name:"Lateral Raise",equipment:"Dumbbells",muscle:"Shoulders",art:"raise"},
-{id:"curl",name:"Biceps Curl",equipment:"Dumbbells",muscle:"Arms",art:"curl"},
-{id:"pushdown",name:"Triceps Pushdown",equipment:"Cable",muscle:"Arms",art:"pulldown"},
-{id:"legpress",name:"Leg Press",equipment:"Machine",muscle:"Legs",art:"legpress"}
+{id:"bench",name:"Bench Press",equipment:"Barbell",muscle:"Chest",image:"exercise-images/bench-press.webp"},
+{id:"incline",name:"Incline Dumbbell Press",equipment:"Dumbbells",muscle:"Chest",image:"exercise-images/incline-dumbbell-press.webp"},
+{id:"ohp",name:"Dumbbell Overhead Press",equipment:"Dumbbells",muscle:"Shoulders",image:"exercise-images/dumbbell-overhead-press.webp"},
+{id:"lateral",name:"Lateral Raise",equipment:"Dumbbells",muscle:"Shoulders",image:"exercise-images/lateral-raise.webp"},
+{id:"pulldown",name:"Lat Pulldown",equipment:"Cable",muscle:"Back",image:"exercise-images/lat-pulldown.webp"},
+{id:"cablerow",name:"Seated Cable Row",equipment:"Cable",muscle:"Back",image:"exercise-images/seated-cable-row.webp"},
+{id:"row",name:"Bent-Over Barbell Row",equipment:"Barbell",muscle:"Back",image:"exercise-images/bent-over-barbell-row.webp"},
+{id:"squat",name:"Back Squat",equipment:"Barbell",muscle:"Legs",image:"exercise-images/back-squat.webp"},
+{id:"rdl",name:"Romanian Deadlift",equipment:"Barbell",muscle:"Posterior Chain",image:"exercise-images/romanian-deadlift.webp"},
+{id:"legpress",name:"Leg Press (45°)",equipment:"Machine",muscle:"Legs",image:"exercise-images/leg-press.webp"}
 ];
 const KEY="gymso-v1";
 const DEFAULT={
@@ -156,7 +155,7 @@ const DEFAULT={
  },
  history:[
   {date:"Aug 14",exercise:"Bench Press",sets:["185 × 10","185 × 9","185 × 8"]},
-  {date:"Aug 14",exercise:"Bent-Over Row",sets:["115 × 10","115 × 10","115 × 8"]},
+  {date:"Aug 14",exercise:"Bent-Over Barbell Row",sets:["115 × 10","115 × 10","115 × 8"]},
   {date:"Aug 12",exercise:"Bench Press",sets:["180 × 10","180 × 10","180 × 9"]}
  ]
 };
@@ -193,38 +192,12 @@ function renderSets(x){
 }
 function startTimer(){restStart=Date.now();clearInterval(timerInt);tick();timerInt=setInterval(tick,1000)}
 function tick(){if(!restStart)return;const e=Math.floor((Date.now()-restStart)/1000);$("timer").textContent=String(Math.floor(e/60)).padStart(2,"0")+":"+String(e%60).padStart(2,"0")}
-function benchSvg(){return `<svg id="benchSvg" viewBox="0 0 620 360" aria-label="Animated bench press">
-<g fill="none" stroke="#0a0a0a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-<path d="M110 55V275M510 55V275M80 275H140M480 275H540M110 104h26M484 104h26"/>
-<path d="M185 220H438M205 220V286M418 220V286M180 286H230M392 286H442"/>
-<circle cx="390" cy="190" r="18"/><path d="M365 194C335 205 302 205 268 197C245 191 220 199 202 216"/>
-<path d="M260 200C250 218 235 236 223 252L203 292M292 202C286 221 282 241 282 258L300 294M190 293h26M289 295h25"/>
-<line id="lu" x1="282" y1="184" x2="253" y2="126"/><line id="lf" x1="253" y1="126" x2="253" y2="82"/>
-<line id="ru" x1="340" y1="184" x2="358" y2="126"/><line id="rf" x1="358" y1="126" x2="358" y2="82"/>
-<g id="barbell"><line x1="130" y1="82" x2="490" y2="82"/><ellipse cx="166" cy="82" rx="31" ry="42"/><ellipse cx="454" cy="82" rx="31" ry="42"/><line x1="118" y1="82" x2="130" y2="82"/><line x1="490" y1="82" x2="502" y2="82"/></g>
-</g><text x="310" y="334" text-anchor="middle" font-family="Helvetica Neue,Arial" font-size="13" fill="#747474" letter-spacing="1.7">ANIMATED MOVEMENT</text></svg>`}
-function staticSvg(type){
- const art={
- squat:'<circle cx="310" cy="70" r="18"/><path d="M310 88v86M310 112l-52 24M310 112l52 24M310 174l-40 65M310 174l44 62M245 88h130"/>',
- hinge:'<circle cx="255" cy="78" r="18"/><path d="M270 92l85 60M355 152l-38 78M355 152l60 60M315 132l-18 55M220 205h205"/>',
- row:'<circle cx="245" cy="88" r="18"/><path d="M260 102l95 53M355 155l-36 72M355 155l58 52M315 135l-10 50M334 145l-8 45M270 182h130"/>',
- pulldown:'<circle cx="310" cy="84" r="18"/><path d="M310 102v100M310 130l-58-45M310 130l58-45M252 85h116M310 202l-40 57M310 202l40 57"/>',
- press:'<circle cx="310" cy="100" r="18"/><path d="M310 118v104M310 145l-42-45M310 145l42-45M265 92h90M310 222l-38 58M310 222l38 58"/>',
- raise:'<circle cx="310" cy="95" r="18"/><path d="M310 113v112M310 145l-80-10M310 145l80-10M310 225l-36 58M310 225l36 58"/>',
- curl:'<circle cx="310" cy="92" r="18"/><path d="M310 110v115M310 142l-42 45M310 142l42 45M268 187l10-34M352 187l-10-34M310 225l-36 58M310 225l36 58"/>',
- legpress:'<circle cx="248" cy="160" r="18"/><path d="M265 166l85 38M350 204l45-65M350 204l-10 72M226 181l-38 60M185 242h225M405 105v155"/>'
- };
- return `<svg viewBox="0 0 620 360"><g fill="none" stroke="#0a0a0a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">${art[type]||art.raise}</g><text x="310" y="334" text-anchor="middle" font-family="Helvetica Neue,Arial" font-size="13" fill="#747474" letter-spacing="1.7">LINE MOVEMENT PREVIEW</text></svg>`
-}
-function renderStage(x){cancelAnimationFrame(raf);$("stage").innerHTML=x.id==="bench"?benchSvg():staticSvg(x.art);if(x.id==="bench")animateBench()}
-function animateBench(){
- const svg=$("benchSvg");if(!svg)return;const bar=svg.querySelector("#barbell"),lu=svg.querySelector("#lu"),lf=svg.querySelector("#lf"),ru=svg.querySelector("#ru"),rf=svg.querySelector("#rf");const start=performance.now();
- function line(el,a,b,c,d){el.setAttribute("x1",a);el.setAttribute("y1",b);el.setAttribute("x2",c);el.setAttribute("y2",d)}
- function frame(now){if(!$("benchSvg"))return;const t=(now-start)/3000,p=.5-.5*Math.cos(t*Math.PI*2),y=82+p*83,lx=253-p*42,rx=358+p*42,ey=126+p*38;bar.setAttribute("transform",`translate(0 ${y-82})`);line(lu,282,184,lx,ey);line(lf,lx,ey,253,y);line(ru,340,184,rx,ey);line(rf,rx,ey,358,y);raf=requestAnimationFrame(frame)}raf=requestAnimationFrame(frame)
+function renderStage(x){
+ cancelAnimationFrame(raf);
+ $("stage").innerHTML=`<img src="${x.image}" alt="${x.name} exercise guide showing movement, primary muscles, and secondary muscles">`;
 }
 function thumb(x){
- if(x.id==="bench")return `<svg viewBox="0 0 120 88"><g fill="none" stroke="#0a0a0a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 68h82M28 68v14M94 68v14M28 20v47M94 20v47"/><circle cx="76" cy="53" r="5"/><path d="M70 56c-13 5-24 4-36 6M51 58l-8-22M69 58l8-22M22 30h80"/><circle cx="30" cy="30" r="8"/><circle cx="94" cy="30" r="8"/></g></svg>`;
- return `<svg viewBox="0 0 120 88"><g fill="none" stroke="#0a0a0a" stroke-width="2.4" stroke-linecap="round"><circle cx="60" cy="20" r="7"/><path d="M60 27v30M60 37L38 49M60 37l22 12M60 57L42 81M60 57l18 24M27 47h12M81 47h12"/></g></svg>`
+ return `<img src="${x.image}" alt="" loading="lazy">`;
 }
 function renderList(host,q,picker){
  q=(q||"").toLowerCase();host.innerHTML="";
