@@ -1,4 +1,4 @@
-const CACHE="gymso-batch2-v8";
+const CACHE="gymso-batch2-v9";
 const FILES=["./","./index.html","./manifest.json","./icon-180.png","./icon-192.png","./icon-512.png","./bench-press.webp","./incline-dumbbell-press.webp","./dumbbell-overhead-press.webp","./lateral-raise.webp","./lat-pulldown.webp","./seated-cable-row.webp","./bent-over-barbell-row.webp","./back-squat.webp","./romanian-deadlift.webp","./leg-press.webp","./dumbbell-bench-press.webp","./incline-barbell-press.webp","./cable-chest-fly.webp","./single-arm-dumbbell-row.webp","./chest-supported-row.webp"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
 self.addEventListener("activate",e=>e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()])));
