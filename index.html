@@ -31,11 +31,12 @@
     .done{width:34px;height:34px;border:1.5px solid var(--ink);border-radius:50%;background:#fff}.done.on{background:var(--ink);color:#fff}.done.on:after{content:"✓"}
     .addset{width:100%;border:0;background:#fff;padding:16px 0 0;font-weight:600}.rest{display:flex;justify-content:space-between;align-items:center}.timer{border:0;background:#fff;font-size:2rem;font-weight:600;letter-spacing:-.05em}
     .ask{display:grid;grid-template-columns:1fr 44px;border:1px solid #bdbdbd;border-radius:12px;overflow:hidden;margin-top:12px}.ask input{border:0;outline:none;padding:13px}.ask button{border:0;border-left:1px solid var(--line);background:#fff;font-size:1.25rem}.answer{margin-top:12px;background:var(--soft);padding:14px;border-radius:12px;font-size:.9rem;line-height:1.45}
+    .finishbar{border-top:1px solid var(--ink);padding:24px 0 4px}.finish{width:100%;border:1px solid var(--ink);border-radius:12px;background:var(--ink);color:#fff;padding:15px;font-weight:700}.status{min-height:18px;margin-top:10px;text-align:center;color:var(--muted);font-size:.82rem}
     nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,760px);display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,.96);border-top:1px solid var(--line);padding:10px 14px calc(9px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)}
     .nav{border:0;background:transparent;color:var(--muted);font-size:.61rem;font-weight:700;display:grid;gap:4px;justify-items:center}.nav b{font-size:1.35rem;font-weight:400}.nav.active{color:var(--ink)}
     .search{display:grid;gap:7px;margin-bottom:20px}.search span{font-size:.68rem;letter-spacing:.11em;font-weight:700}.search input{border:0;border-bottom:1px solid var(--ink);padding:12px 0;outline:none;font-size:1.02rem}
     .list{border-top:1px solid var(--line)}.exercise{width:100%;display:grid;grid-template-columns:84px 1fr 24px;gap:14px;align-items:center;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:14px 0}.thumb{width:84px;height:68px;display:grid;place-items:center;overflow:hidden}.thumb svg{width:100%;height:100%}.thumb img{display:block;width:84px;height:68px;object-fit:contain;background:#fff}.exercise h3{font-size:1rem;margin-bottom:5px}.exercise p{color:var(--muted);font-size:.82rem}
-    .history{padding:16px 0;border-bottom:1px solid var(--line)}.history h3{margin-bottom:6px}.history p{font-size:.85rem;color:var(--muted)}
+    .history{padding:18px 0;border-bottom:1px solid var(--line)}.history h3{margin-bottom:6px}.history>p{font-size:.85rem;color:var(--muted)}.historyexercise{display:flex;justify-content:space-between;gap:16px;padding-top:12px;margin-top:12px;border-top:1px solid var(--line)}.historyexercise strong{font-size:.92rem}.historysets{color:var(--muted);font-size:.82rem;text-align:right}
     dialog{width:min(100% - 24px,720px);height:min(88vh,820px);border:1px solid var(--ink);border-radius:18px;padding:20px;background:#fff}dialog::backdrop{background:rgba(0,0,0,.28);backdrop-filter:blur(3px)}
     .dialoghead{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px}.dialoghead h2{font-size:2rem}.dialoglist{max-height:calc(88vh - 180px);overflow:auto}
     .settings{border-top:1px solid var(--line)}.setting{display:flex;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--line);gap:20px}.reset{margin-top:28px;width:100%;padding:12px;background:#fff;border:1px solid var(--ink)}
@@ -91,6 +92,10 @@
           <div id="answer" class="answer" hidden></div>
         </div>
       </article>
+      <div class="finishbar">
+        <button id="finishWorkout" class="finish">Finish Workout</button>
+        <p id="workoutStatus" class="status" aria-live="polite"></p>
+      </div>
     </section>
 
     <section id="history" class="screen">
@@ -153,22 +158,30 @@ const EX=[
 const KEY="gymso-v1";
 const DEFAULT={
  workout:["bench","row","lateral"],active:"bench",
+ draftStartedAt:null,
  logs:{
   bench:[{w:185,r:10,d:false},{w:185,r:9,d:false},{w:185,r:"",d:false}],
   row:[{w:115,r:10,d:false},{w:115,r:10,d:false},{w:115,r:"",d:false}],
   lateral:[{w:20,r:12,d:false},{w:20,r:12,d:false},{w:20,r:"",d:false}]
  },
  history:[
-  {date:"Aug 14",exercise:"Bench Press",sets:["185 × 10","185 × 9","185 × 8"]},
-  {date:"Aug 14",exercise:"Bent-Over Barbell Row",sets:["115 × 10","115 × 10","115 × 8"]},
-  {date:"Aug 12",exercise:"Bench Press",sets:["180 × 10","180 × 10","180 × 9"]}
+  {id:"demo-aug-14",startedAt:"2026-08-14T18:00:00.000Z",finishedAt:"2026-08-14T18:47:00.000Z",exercises:[
+   {exerciseId:"bench",sets:[{weight:185,reps:10},{weight:185,reps:9},{weight:185,reps:8}]},
+   {exerciseId:"row",sets:[{weight:115,reps:10},{weight:115,reps:10},{weight:115,reps:8}]}
+  ]},
+  {id:"demo-aug-12",startedAt:"2026-08-12T18:00:00.000Z",finishedAt:"2026-08-12T18:38:00.000Z",exercises:[
+   {exerciseId:"bench",sets:[{weight:180,reps:10},{weight:180,reps:10},{weight:180,reps:9}]}
+  ]}
  ]
 };
 let state=load(),restStart=null,timerInt=null,raf=null;
 const $=id=>document.getElementById(id);
 function copyDefault(){return JSON.parse(JSON.stringify(DEFAULT))}
-function load(){try{return JSON.parse(localStorage.getItem(KEY))||copyDefault()}catch{return copyDefault()}}
-function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function legacyHistory(items){return items.map((h,i)=>{const d=new Date(`${h.date}, ${new Date().getFullYear()} 12:00:00`),x=EX.find(e=>e.name===h.exercise);return{id:`legacy-${i}`,startedAt:d.toISOString(),finishedAt:d.toISOString(),exercises:[{exerciseId:x?.id||h.exercise,sets:(h.sets||[]).map(s=>{const p=String(s).split("×");return{weight:Number(p[0].trim())||p[0].trim(),reps:Number((p[1]||"").trim())||(p[1]||"").trim()}})}]}})}
+function load(){try{const saved=JSON.parse(localStorage.getItem(KEY));if(!saved)return copyDefault();return{workout:Array.isArray(saved.workout)?saved.workout:copyDefault().workout,active:saved.active||"bench",draftStartedAt:saved.draftStartedAt||null,logs:saved.logs&&typeof saved.logs==="object"?saved.logs:{},history:Array.isArray(saved.history)?(saved.history.some(h=>h.exercise)?legacyHistory(saved.history):saved.history):[]}}catch{return copyDefault()}}
+function persist(next=state){try{localStorage.setItem(KEY,JSON.stringify(next));return true}catch{return false}}
+function save(){return persist(state)}
+function beginDraft(){if(!state.draftStartedAt)state.draftStartedAt=new Date().toISOString();save()}
 function ex(id){return EX.find(x=>x.id===id)}
 function current(){return ex(state.active)||EX[0]}
 function ensure(id){if(!state.logs[id])state.logs[id]=[{w:"",r:"",d:false},{w:"",r:"",d:false},{w:"",r:"",d:false}];return state.logs[id]}
@@ -181,17 +194,17 @@ function renderDetail(){
  const x=current();$("name").textContent=x.name;$("meta").textContent=(x.equipment+" · "+x.muscle).toUpperCase();renderStage(x);renderLast(x);renderSets(x)
 }
 function renderLast(x){
- const last=state.history.find(h=>h.exercise===x.name);$("lastDate").textContent=last?last.date:"No previous workout";
- $("lastSets").innerHTML=last?last.sets.map(s=>'<div class="lastset">'+s+"</div>").join(""):'<div class="lastset muted">Your first logged session will appear here.</div>'
+ const session=state.history.find(h=>h.exercises?.some(e=>e.exerciseId===x.id)),last=session?.exercises.find(e=>e.exerciseId===x.id);$("lastDate").textContent=session?formatDate(session.finishedAt):"No previous workout";
+ $("lastSets").innerHTML=last?last.sets.map(s=>`<div class="lastset">${s.weight} × ${s.reps}</div>`).join(""):'<div class="lastset muted">Your first logged session will appear here.</div>'
 }
 function renderSets(x){
  const host=$("setRows");host.innerHTML="";
  ensure(x.id).forEach((s,i)=>{
   const row=document.createElement("div");row.className="setrow";
   const n=document.createElement("strong");n.textContent=i+1;
-  const w=document.createElement("input");w.type="number";w.inputMode="decimal";w.placeholder="—";w.value=s.w;w.oninput=()=>{s.w=w.value;save()};
-  const r=document.createElement("input");r.type="number";r.inputMode="numeric";r.placeholder="—";r.value=s.r;r.oninput=()=>{s.r=r.value;save()};
-  const d=document.createElement("button");d.className="done "+(s.d?"on":"");d.onclick=()=>{s.d=!s.d;if(s.d)startTimer();save();renderSets(x)};
+  const w=document.createElement("input");w.type="number";w.inputMode="decimal";w.placeholder="—";w.value=s.w;w.oninput=()=>{s.w=w.value;beginDraft()};
+  const r=document.createElement("input");r.type="number";r.inputMode="numeric";r.placeholder="—";r.value=s.r;r.oninput=()=>{s.r=r.value;beginDraft()};
+  const d=document.createElement("button");d.className="done "+(s.d?"on":"");d.setAttribute("aria-label",`${s.d?"Reopen":"Complete"} set ${i+1}`);d.onclick=()=>{s.d=!s.d;if(s.d)startTimer();beginDraft();renderSets(x)};
   row.append(n,w,r,d);host.appendChild(row)
  })
 }
@@ -208,16 +221,19 @@ function renderList(host,q,picker){
  q=(q||"").toLowerCase();host.innerHTML="";
  EX.filter(x=>(x.name+" "+x.equipment+" "+x.muscle).toLowerCase().includes(q)).forEach(x=>{
   const b=document.createElement("button");b.className="exercise";b.innerHTML=`<span class="thumb">${thumb(x)}</span><span><h3>${x.name}</h3><p>${x.equipment} · ${x.muscle}</p></span><span>→</span>`;
-  b.onclick=()=>{if(!state.workout.includes(x.id))state.workout.push(x.id);state.active=x.id;ensure(x.id);save();if(picker)$("picker").close();show("workout");render()};host.appendChild(b)
+  b.onclick=()=>{if(!state.workout.includes(x.id)){state.workout.push(x.id);beginDraft()}state.active=x.id;ensure(x.id);save();if(picker)$("picker").close();show("workout");render()};host.appendChild(b)
  })
 }
-function renderHistory(){$("historyList").innerHTML=state.history.map(h=>`<div class="history"><h3>${h.exercise}</h3><p>${h.date} · ${h.sets.join(" · ")}</p></div>`).join("")}
+function formatDate(value){const d=new Date(value);return new Intl.DateTimeFormat("en-CA",{month:"short",day:"numeric",year:d.getFullYear()===new Date().getFullYear()?undefined:"numeric"}).format(d)}
+function renderHistory(){const host=$("historyList");if(!state.history.length){host.innerHTML='<div class="history"><h3>No workouts yet</h3><p>Complete your first workout and it will appear here.</p></div>';return}host.innerHTML=state.history.map(h=>{const mins=Math.max(0,Math.round((new Date(h.finishedAt)-new Date(h.startedAt))/60000)),count=h.exercises.reduce((n,e)=>n+e.sets.length,0);return`<article class="history"><h3>${formatDate(h.finishedAt)}</h3><p>${mins?mins+" min · ":""}${count} completed set${count===1?"":"s"}</p>${h.exercises.map(e=>{const x=ex(e.exerciseId);return`<div class="historyexercise"><strong>${x?.name||e.exerciseId}</strong><span class="historysets">${e.sets.map(s=>`${s.weight} × ${s.reps}`).join(" · ")}</span></div>`}).join("")}</article>`}).join("")}
+function finishWorkout(){const exercises=state.workout.map(id=>({exerciseId:id,sets:ensure(id).filter(s=>s.d&&s.w!==""&&s.r!=="").map(s=>({weight:Number(s.w),reps:Number(s.r)}))})).filter(e=>e.sets.length);if(!exercises.length){$("workoutStatus").textContent="Complete at least one set before finishing.";return}const finishedAt=new Date().toISOString(),session={id:crypto.randomUUID?crypto.randomUUID():`workout-${Date.now()}`,startedAt:state.draftStartedAt||finishedAt,finishedAt,exercises},logs={};state.workout.forEach(id=>logs[id]=[{w:"",r:"",d:false},{w:"",r:"",d:false},{w:"",r:"",d:false}]);const next={...state,draftStartedAt:null,logs,history:[session,...state.history]};if(!persist(next)){$("workoutStatus").textContent="Workout could not be saved on this device.";return}state=next;restStart=null;clearInterval(timerInt);$("timer").textContent="00:00";$("workoutStatus").textContent="";render();show("history")}
 function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));document.querySelectorAll(".nav").forEach(n=>n.classList.toggle("active",n.dataset.screen===id));scrollTo({top:0,behavior:"smooth"})}
 function openPicker(){$("pickerSearch").value="";renderList($("pickerList"),"",true);$("picker").showModal()}
 document.querySelectorAll(".nav").forEach(n=>n.onclick=()=>show(n.dataset.screen));
 $("addExercise").onclick=openPicker;$("changeExercise").onclick=openPicker;$("closePicker").onclick=()=>$("picker").close();
 $("pickerSearch").oninput=e=>renderList($("pickerList"),e.target.value,true);$("librarySearch").oninput=e=>renderList($("library"),e.target.value,false);
-$("addSet").onclick=()=>{const a=ensure(state.active),last=a[a.length-1]||{w:""};a.push({w:last.w,r:"",d:false});save();renderSets(current())};
+$("addSet").onclick=()=>{const a=ensure(state.active),last=a[a.length-1]||{w:""};a.push({w:last.w,r:"",d:false});beginDraft();renderSets(current())};
+$("finishWorkout").onclick=finishWorkout;
 $("timer").onclick=()=>{restStart=null;clearInterval(timerInt);$("timer").textContent="00:00"};
 $("askForm").onsubmit=e=>{e.preventDefault();const q=$("askInput").value.trim();if(!q)return;const x=current(),sets=ensure(x.id).filter(s=>s.d).map(s=>`${s.w||"—"} lb × ${s.r||"—"}`).join(", ")||"No completed sets yet";$("answer").hidden=false;$("answer").innerHTML=`<strong>AI comes in the next phase.</strong><br><br>The app has already prepared the context it would send: <em>${x.name} · ${sets}</em><br><br>Your question: “${q.replace(/[<>]/g,"")}”`};
 $("reset").onclick=()=>{state=copyDefault();save();render();show("workout")};
