@@ -21,6 +21,7 @@
     .icon,.text{border:0;background:transparent}.icon{font-size:1.55rem}.text{text-decoration:underline;text-underline-offset:4px;font-weight:600}
     .screen{display:none;padding:26px 0}.screen.active{display:block}
     .rowhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px}
+    .planprompt{border-top:1px solid var(--ink);padding:20px 0 24px}.planprompt h3{font-size:clamp(1.45rem,6vw,2rem);line-height:1.08;letter-spacing:-.025em;margin-bottom:16px}.planlist{display:grid;gap:9px}.plancard{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--ink);border-radius:12px;background:#fff;padding:14px;text-align:left}.plancard.active{background:var(--ink);color:#fff}.plancard strong{display:block;margin-bottom:4px}.plancard span{font-size:.8rem;color:var(--muted)}.plancard.active span{color:#ccc}.saveplan{width:100%;margin-top:10px;border:1px dashed var(--ink);border-radius:12px;background:#fff;padding:13px;font-weight:600}
     .tabs{display:flex;gap:8px;overflow:auto;padding-bottom:18px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
     .chip{flex:0 0 auto;border:1px solid var(--ink);border-radius:999px;background:#fff;padding:9px 13px;font-size:.82rem;font-weight:600}.chip.active{background:var(--ink);color:#fff}
     .detail{border-top:1px solid var(--line);padding-top:22px}.detailhead{display:flex;justify-content:space-between;gap:18px}
@@ -37,7 +38,7 @@
     .search{display:grid;gap:7px;margin-bottom:20px}.search span{font-size:.68rem;letter-spacing:.11em;font-weight:700}.search input{border:0;border-bottom:1px solid var(--ink);padding:12px 0;outline:none;font-size:1.02rem}
     .list{border-top:1px solid var(--line)}.exercise{width:100%;display:grid;grid-template-columns:84px 1fr 24px;gap:14px;align-items:center;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:14px 0}.thumb{width:84px;height:68px;display:grid;place-items:center;overflow:hidden}.thumb svg{width:100%;height:100%}.thumb img{display:block;width:84px;height:68px;object-fit:contain;background:#fff}.exercise h3{font-size:1rem;margin-bottom:5px}.exercise p{color:var(--muted);font-size:.82rem}
     .history{padding:18px 0;border-bottom:1px solid var(--line)}.historyhead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.history h3{margin-bottom:6px}.history>p,.historyhead p{font-size:.85rem;color:var(--muted)}.deleteworkout{border:0;background:transparent;color:#a11;padding:2px 0;text-decoration:underline;text-underline-offset:4px;font-size:.82rem;font-weight:600}.historyexercise{display:flex;justify-content:space-between;gap:16px;padding-top:12px;margin-top:12px;border-top:1px solid var(--line)}.historyexercise strong{font-size:.92rem}.historysets{color:var(--muted);font-size:.82rem;text-align:right}
-    dialog{width:min(100% - 24px,720px);height:min(88vh,820px);border:1px solid var(--ink);border-radius:18px;padding:20px;background:#fff}dialog::backdrop{background:rgba(0,0,0,.28);backdrop-filter:blur(3px)}
+    dialog{width:min(100% - 24px,720px);height:min(88vh,820px);border:1px solid var(--ink);border-radius:18px;padding:20px;background:#fff}dialog.compact{height:auto}dialog::backdrop{background:rgba(0,0,0,.28);backdrop-filter:blur(3px)}
     .dialoghead{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px}.dialoghead h2{font-size:2rem}.dialoglist{max-height:calc(88vh - 180px);overflow:auto}
     .settings{border-top:1px solid var(--line)}.setting{display:flex;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--line);gap:20px}.reset{margin-top:28px;width:100%;padding:12px;background:#fff;border:1px solid var(--ink)}
     @media(min-width:700px){.shell{padding-left:34px;padding-right:34px}.stage{min-height:360px}}
@@ -56,6 +57,13 @@
         <div><p class="eyebrow">TODAY</p><h2>Workout</h2></div>
         <button id="addExercise" class="text">+ Add exercise</button>
       </div>
+      <section class="planprompt">
+        <p class="eyebrow">YOUR PLANS</p>
+        <h3>What are you thinking about doing today?</h3>
+        <div id="planList" class="planlist"></div>
+        <button id="saveCurrentPlan" class="saveplan">+ Save current workout as a plan</button>
+        <p id="planStatus" class="status" aria-live="polite"></p>
+      </section>
       <div id="tabs" class="tabs"></div>
 
       <article class="detail">
@@ -138,6 +146,17 @@
   <div id="pickerList" class="list dialoglist"></div>
 </dialog>
 
+<dialog id="savePlanDialog" class="compact">
+  <div class="dialoghead">
+    <div><p class="eyebrow">NEW PLAN</p><h2>Save workout</h2></div>
+    <button id="closePlanDialog" class="icon" type="button">×</button>
+  </div>
+  <form id="savePlanForm" style="margin-top:20px">
+    <label class="search"><span>PLAN NAME</span><input id="planName" placeholder="Push Day" maxlength="40" required></label>
+    <button class="finish" type="submit">Save Plan</button>
+  </form>
+</dialog>
+
 <script>
 const EX=[
 {id:"bench",name:"Bench Press",equipment:"Barbell",muscle:"Chest",image:"bench-press.webp"},
@@ -159,6 +178,12 @@ const EX=[
 const KEY="gymso-v1";
 const DEFAULT={
  workout:["bench","row","lateral"],active:"bench",
+ activePlanId:null,
+ plans:[
+  {id:"push-day",name:"Push Day",exercises:[{exerciseId:"bench",sets:3},{exerciseId:"inclinebarbell",sets:3},{exerciseId:"lateral",sets:3}]},
+  {id:"pull-day",name:"Pull Day",exercises:[{exerciseId:"pulldown",sets:3},{exerciseId:"cablerow",sets:3},{exerciseId:"row",sets:3}]},
+  {id:"leg-day",name:"Leg Day",exercises:[{exerciseId:"squat",sets:3},{exerciseId:"rdl",sets:3},{exerciseId:"legpress",sets:3}]}
+ ],
  draftStartedAt:null,
  logs:{
   bench:[{w:185,r:10,d:false},{w:185,r:9,d:false},{w:185,r:"",d:false}],
@@ -179,14 +204,18 @@ let state=load(),restStart=null,timerInt=null,raf=null;
 const $=id=>document.getElementById(id);
 function copyDefault(){return JSON.parse(JSON.stringify(DEFAULT))}
 function legacyHistory(items){return items.map((h,i)=>{const d=new Date(`${h.date}, ${new Date().getFullYear()} 12:00:00`),x=EX.find(e=>e.name===h.exercise);return{id:`legacy-${i}`,startedAt:d.toISOString(),finishedAt:d.toISOString(),exercises:[{exerciseId:x?.id||h.exercise,sets:(h.sets||[]).map(s=>{const p=String(s).split("×");return{weight:Number(p[0].trim())||p[0].trim(),reps:Number((p[1]||"").trim())||(p[1]||"").trim()}})}]}})}
-function load(){try{const saved=JSON.parse(localStorage.getItem(KEY));if(!saved)return copyDefault();return{workout:Array.isArray(saved.workout)?saved.workout:copyDefault().workout,active:saved.active||"bench",draftStartedAt:saved.draftStartedAt||null,logs:saved.logs&&typeof saved.logs==="object"?saved.logs:{},history:Array.isArray(saved.history)?(saved.history.some(h=>h.exercise)?legacyHistory(saved.history):saved.history):[]}}catch{return copyDefault()}}
+function load(){try{const saved=JSON.parse(localStorage.getItem(KEY)),defaults=copyDefault();if(!saved)return defaults;return{workout:Array.isArray(saved.workout)?saved.workout:defaults.workout,active:saved.active||"bench",activePlanId:saved.activePlanId||null,plans:Array.isArray(saved.plans)?saved.plans:defaults.plans,draftStartedAt:saved.draftStartedAt||null,logs:saved.logs&&typeof saved.logs==="object"?saved.logs:{},history:Array.isArray(saved.history)?(saved.history.some(h=>h.exercise)?legacyHistory(saved.history):saved.history):[]}}catch{return copyDefault()}}
 function persist(next=state){try{localStorage.setItem(KEY,JSON.stringify(next));return true}catch{return false}}
 function save(){return persist(state)}
 function beginDraft(){if(!state.draftStartedAt)state.draftStartedAt=new Date().toISOString();save()}
 function ex(id){return EX.find(x=>x.id===id)}
 function current(){return ex(state.active)||EX[0]}
 function ensure(id){if(!state.logs[id])state.logs[id]=[{w:"",r:"",d:false},{w:"",r:"",d:false},{w:"",r:"",d:false}];return state.logs[id]}
-function render(){renderTabs();renderDetail();renderHistory();renderList($("library"),$("librarySearch").value,false);renderList($("pickerList"),$("pickerSearch").value,true)}
+function render(){renderPlans();renderTabs();renderDetail();renderHistory();renderList($("library"),$("librarySearch").value,false);renderList($("pickerList"),$("pickerSearch").value,true)}
+function renderPlans(){const host=$("planList");host.innerHTML="";state.plans.forEach(plan=>{const b=document.createElement("button"),names=plan.exercises.map(item=>ex(item.exerciseId)?.name).filter(Boolean);b.className="plancard "+(plan.id===state.activePlanId?"active":"");b.setAttribute("aria-label",`Open ${plan.name} workout plan`);const copy=document.createElement("div"),title=document.createElement("strong"),meta=document.createElement("span"),arrow=document.createElement("b");title.textContent=plan.name;meta.textContent=`${names.length} exercise${names.length===1?"":"s"} · ${names.join(" · ")}`;arrow.textContent="→";copy.append(title,meta);b.append(copy,arrow);b.onclick=()=>openPlan(plan.id);host.appendChild(b)})}
+function openPlan(id){const plan=state.plans.find(p=>p.id===id);if(!plan)return;if(state.draftStartedAt&&!confirm("Replace your unfinished workout with this plan? The current draft will be cleared."))return;const items=plan.exercises.filter(item=>ex(item.exerciseId));if(!items.length)return;const logs={};items.forEach(item=>logs[item.exerciseId]=Array.from({length:Math.max(1,item.sets||3)},()=>({w:"",r:"",d:false})));state={...state,activePlanId:plan.id,workout:items.map(item=>item.exerciseId),active:items[0].exerciseId,draftStartedAt:null,logs};save();$("planStatus").textContent=`${plan.name} opened.`;render();$("tabs").scrollIntoView({behavior:"smooth",block:"start"})}
+function openSavePlan(){$("planName").value="";$("savePlanDialog").showModal();setTimeout(()=>$("planName").focus(),50)}
+function saveCurrentAsPlan(){const name=$("planName").value.trim();if(!name)return;const exercises=state.workout.filter(id=>ex(id)).map(id=>({exerciseId:id,sets:Math.max(1,ensure(id).length)}));if(!exercises.length)return;const plan={id:crypto.randomUUID?crypto.randomUUID():`plan-${Date.now()}`,name,exercises},next={...state,activePlanId:plan.id,plans:[...state.plans,plan]};if(!persist(next)){$("planStatus").textContent="Plan could not be saved on this device.";return}state=next;$("savePlanDialog").close();$("planStatus").textContent=`${name} saved.`;render()}
 function renderTabs(){
  $("tabs").innerHTML="";
  state.workout.forEach(id=>{const x=ex(id);if(!x)return;const b=document.createElement("button");b.className="chip "+(id===state.active?"active":"");b.textContent=x.name;b.onclick=()=>{state.active=id;save();render()};$("tabs").appendChild(b)})
@@ -222,7 +251,7 @@ function renderList(host,q,picker){
  q=(q||"").toLowerCase();host.innerHTML="";
  EX.filter(x=>(x.name+" "+x.equipment+" "+x.muscle).toLowerCase().includes(q)).forEach(x=>{
   const b=document.createElement("button");b.className="exercise";b.innerHTML=`<span class="thumb">${thumb(x)}</span><span><h3>${x.name}</h3><p>${x.equipment} · ${x.muscle}</p></span><span>→</span>`;
-  b.onclick=()=>{if(!state.workout.includes(x.id)){state.workout.push(x.id);beginDraft()}state.active=x.id;ensure(x.id);save();if(picker)$("picker").close();show("workout");render()};host.appendChild(b)
+  b.onclick=()=>{if(!state.workout.includes(x.id)){state.workout.push(x.id);state.activePlanId=null;beginDraft()}state.active=x.id;ensure(x.id);save();if(picker)$("picker").close();show("workout");render()};host.appendChild(b)
  })
 }
 function formatDate(value){const d=new Date(value);return new Intl.DateTimeFormat("en-CA",{month:"short",day:"numeric",year:d.getFullYear()===new Date().getFullYear()?undefined:"numeric"}).format(d)}
@@ -233,6 +262,7 @@ function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.to
 function openPicker(){$("pickerSearch").value="";renderList($("pickerList"),"",true);$("picker").showModal()}
 document.querySelectorAll(".nav").forEach(n=>n.onclick=()=>show(n.dataset.screen));
 $("addExercise").onclick=openPicker;$("changeExercise").onclick=openPicker;$("closePicker").onclick=()=>$("picker").close();
+$("saveCurrentPlan").onclick=openSavePlan;$("closePlanDialog").onclick=()=>$("savePlanDialog").close();$("savePlanForm").onsubmit=e=>{e.preventDefault();saveCurrentAsPlan()};
 $("pickerSearch").oninput=e=>renderList($("pickerList"),e.target.value,true);$("librarySearch").oninput=e=>renderList($("library"),e.target.value,false);
 $("addSet").onclick=()=>{const a=ensure(state.active),last=a[a.length-1]||{w:""};a.push({w:last.w,r:"",d:false});beginDraft();renderSets(current())};
 $("finishWorkout").onclick=finishWorkout;
