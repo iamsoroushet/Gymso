@@ -1,4 +1,4 @@
-const CACHE="gymso-batch4-v13";
+const CACHE="gymso-batch4-v14";
 const FILES=["./","./index.html","./manifest.json","./icon-180.png","./icon-192.png","./icon-512.png","./bench-press.webp","./incline-dumbbell-press.webp","./dumbbell-overhead-press.webp","./lateral-raise.webp","./lat-pulldown.webp","./seated-cable-row.webp","./bent-over-barbell-row.webp","./back-squat.webp","./romanian-deadlift.webp","./leg-press.webp","./dumbbell-bench-press.webp","./incline-barbell-press.webp","./cable-chest-fly.webp","./single-arm-dumbbell-row.webp","./chest-supported-row.webp","./straight-bar-triceps-pushdown.webp","./v-bar-triceps-pushdown.webp","./dumbbell-biceps-curl.webp","./hammer-curl.webp","./face-pull.webp","./bulgarian-split-squat.webp","./leg-extension.webp","./lying-leg-curl.webp","./machine-hip-thrust.webp","./standing-calf-raise.webp","./seated-calf-raise.webp"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
 self.addEventListener("activate",e=>e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()])));

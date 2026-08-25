@@ -211,19 +211,7 @@ const EX=[
 {id:"standingcalfraise",name:"Standing Calf Raise",equipment:"Machine",muscle:"Calves",image:"standing-calf-raise.webp"},
 {id:"seatedcalfraise",name:"Seated Calf Raise",equipment:"Machine",muscle:"Calves",image:"seated-calf-raise.webp"}
 ];
-const KEY="gymso-v1",STORAGE_VERSION=2;
-const DEMO_WORKOUT=["bench","row","lateral"];
-const DEMO_PLANS=[
- {id:"push-day",name:"Push Day",exercises:[{exerciseId:"bench",sets:3},{exerciseId:"inclinebarbell",sets:3},{exerciseId:"lateral",sets:3}]},
- {id:"pull-day",name:"Pull Day",exercises:[{exerciseId:"pulldown",sets:3},{exerciseId:"cablerow",sets:3},{exerciseId:"row",sets:3}]},
- {id:"leg-day",name:"Leg Day",exercises:[{exerciseId:"squat",sets:3},{exerciseId:"rdl",sets:3},{exerciseId:"legpress",sets:3}]}
-];
-const DEMO_LOGS={
- bench:[{w:185,r:10,d:false},{w:185,r:9,d:false},{w:185,r:"",d:false}],
- row:[{w:115,r:10,d:false},{w:115,r:10,d:false},{w:115,r:"",d:false}],
- lateral:[{w:20,r:12,d:false},{w:20,r:12,d:false},{w:20,r:"",d:false}]
-};
-const DEMO_HISTORY_IDS=new Set(["demo-aug-14","demo-aug-12"]);
+const KEY="gymso-v1",STORAGE_VERSION=3;
 const DEFAULT={
  storageVersion:STORAGE_VERSION,
  workout:[],active:null,
@@ -236,19 +224,15 @@ const DEFAULT={
 let state=load(),restStart=null,timerInt=null,raf=null,editingPlanId=null;
 const $=id=>document.getElementById(id);
 function copyDefault(){return JSON.parse(JSON.stringify(DEFAULT))}
-function legacyHistory(items){return items.map((h,i)=>{const d=new Date(`${h.date}, ${new Date().getFullYear()} 12:00:00`),x=EX.find(e=>e.name===h.exercise);return{id:`legacy-${i}`,startedAt:d.toISOString(),finishedAt:d.toISOString(),exercises:[{exerciseId:x?.id||h.exercise,sets:(h.sets||[]).map(s=>{const p=String(s).split("×");return{weight:Number(p[0].trim())||p[0].trim(),reps:Number((p[1]||"").trim())||(p[1]||"").trim()}})}]}})}
 function sameValue(a,b){return JSON.stringify(a)===JSON.stringify(b)}
-function samePlan(a,b){return a?.id===b.id&&a?.name===b.name&&Array.isArray(a.exercises)&&a.exercises.length===b.exercises.length&&a.exercises.every((item,i)=>item.exerciseId===b.exercises[i].exerciseId&&Number(item.sets||3)===b.exercises[i].sets)}
 function load(){
  try{
   const raw=localStorage.getItem(KEY),defaults=copyDefault();if(!raw)return defaults;
   const saved=JSON.parse(raw);if(!saved||typeof saved!=="object")return defaults;
-  const cleanDemo=(Number(saved.storageVersion)||1)<STORAGE_VERSION,seededWorkout=cleanDemo&&!saved.draftStartedAt&&sameValue(saved.workout,DEMO_WORKOUT)&&sameValue(saved.logs,DEMO_LOGS);
-  const workout=(seededWorkout?[]:(Array.isArray(saved.workout)?saved.workout:[])).filter(id=>ex(id));
-  let plans=Array.isArray(saved.plans)?saved.plans:[],history=Array.isArray(saved.history)?(saved.history.some(h=>h.exercise)?legacyHistory(saved.history):saved.history):[];
-  if(cleanDemo){plans=plans.filter(plan=>!DEMO_PLANS.some(demo=>samePlan(plan,demo)));history=history.filter(item=>!DEMO_HISTORY_IDS.has(item.id))}
-  const active=workout.includes(saved.active)?saved.active:(workout[0]||null),activePlanId=plans.some(plan=>plan.id===saved.activePlanId)?saved.activePlanId:null;
-  const next={storageVersion:STORAGE_VERSION,workout,active,activePlanId,plans,draftStartedAt:seededWorkout?null:(saved.draftStartedAt||null),logs:seededWorkout?{}:(saved.logs&&typeof saved.logs==="object"?saved.logs:{}),history};
+  if((Number(saved.storageVersion)||0)<STORAGE_VERSION){try{localStorage.setItem(KEY,JSON.stringify(defaults))}catch{}return defaults}
+  const workout=(Array.isArray(saved.workout)?saved.workout:[]).filter(id=>ex(id)),plans=Array.isArray(saved.plans)?saved.plans:[],history=Array.isArray(saved.history)?saved.history:[];
+  const active=workout.includes(saved.active)?saved.active:(workout[0]||null),activePlanId=plans.some(plan=>plan?.id===saved.activePlanId)?saved.activePlanId:null;
+  const next={storageVersion:STORAGE_VERSION,workout,active,activePlanId,plans,draftStartedAt:saved.draftStartedAt||null,logs:saved.logs&&typeof saved.logs==="object"?saved.logs:{},history};
   if(!sameValue(saved,next))try{localStorage.setItem(KEY,JSON.stringify(next))}catch{}
   return next
  }catch{return copyDefault()}
