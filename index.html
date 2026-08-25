@@ -21,7 +21,9 @@
     .icon,.text{border:0;background:transparent}.icon{font-size:1.55rem}.text{text-decoration:underline;text-underline-offset:4px;font-weight:600}
     .screen{display:none;padding:26px 0}.screen.active{display:block}
     .rowhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px}
-    .planprompt{border-top:1px solid var(--ink);padding:20px 0 24px}.planprompt h3{font-size:clamp(1.45rem,6vw,2rem);line-height:1.08;letter-spacing:-.025em;margin-bottom:16px}.planlist{display:grid;gap:9px}.planrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.plancard{width:100%;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--ink);border-radius:12px;background:#fff;padding:14px;text-align:left}.plancard.active{background:var(--ink);color:#fff}.plancard strong{display:block;margin-bottom:4px}.plancard span{display:block;font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.plancard.active span{color:#ccc}.planmanage{border:1px solid var(--ink);border-radius:12px;background:#fff;padding:0 12px;font-size:.8rem;font-weight:600}.saveplan{width:100%;margin-top:10px;border:1px dashed var(--ink);border-radius:12px;background:#fff;padding:13px;font-weight:600}
+    .planprompt{border-top:1px solid var(--ink);padding:20px 0 24px}.planprompt h3{font-size:clamp(1.45rem,6vw,2rem);line-height:1.08;letter-spacing:-.025em;margin-bottom:16px}.planlist{display:grid;gap:9px}.planempty{color:var(--muted);font-size:.88rem;padding:2px 0 6px}.planrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.plancard{width:100%;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--ink);border-radius:12px;background:#fff;padding:14px;text-align:left}.plancard.active{background:var(--ink);color:#fff}.plancard strong{display:block;margin-bottom:4px}.plancard span{display:block;font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.plancard.active span{color:#ccc}.planmanage{border:1px solid var(--ink);border-radius:12px;background:#fff;padding:0 12px;font-size:.8rem;font-weight:600}.saveplan{width:100%;margin-top:10px;border:1px dashed var(--ink);border-radius:12px;background:#fff;padding:13px;font-weight:600}
+    .emptyworkout{border:1px dashed var(--ink);border-radius:14px;padding:28px 20px;text-align:center}.emptyworkout h3{font-size:1.4rem;margin-bottom:8px}.emptyworkout p:not(.eyebrow){color:var(--muted);font-size:.9rem;line-height:1.45;margin:0 auto 18px;max-width:360px}.emptyworkout .finish{max-width:320px}
+    [hidden]{display:none!important}
     .tabs{display:flex;gap:8px;overflow:auto;padding-bottom:18px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
     .chip{flex:0 0 auto;border:1px solid var(--ink);border-radius:999px;background:#fff;padding:9px 13px;font-size:.82rem;font-weight:600}.chip.active{background:var(--ink);color:#fff}
     .detail{border-top:1px solid var(--line);padding-top:22px}.detailhead{display:flex;justify-content:space-between;gap:18px}
@@ -64,9 +66,15 @@
         <button id="saveCurrentPlan" class="saveplan">+ Save current workout as a plan</button>
         <p id="planStatus" class="status" aria-live="polite"></p>
       </section>
-      <div id="tabs" class="tabs"></div>
+      <section id="emptyWorkout" class="emptyworkout">
+        <p class="eyebrow">READY WHEN YOU ARE</p>
+        <h3>No workout started</h3>
+        <p>Add your first exercise or open one of your saved plans to begin.</p>
+        <button id="startWorkout" class="finish" type="button">+ Add first exercise</button>
+      </section>
+      <div id="tabs" class="tabs" hidden></div>
 
-      <article class="detail">
+      <article id="workoutDetail" class="detail" hidden>
         <div class="detailhead">
           <div><p class="eyebrow" id="meta"></p><h2 id="name"></h2></div>
           <button id="changeExercise" class="text">Change</button>
@@ -100,7 +108,7 @@
           <div id="answer" class="answer" hidden></div>
         </div>
       </article>
-      <div class="finishbar">
+      <div id="finishBar" class="finishbar" hidden>
         <button id="finishWorkout" class="finish">Finish Workout</button>
         <p id="workoutStatus" class="status" aria-live="polite"></p>
       </div>
@@ -125,7 +133,7 @@
         <div class="setting"><span>Storage</span><strong>On this device</strong></div>
         <div class="setting"><span>AI</span><strong>Not connected yet</strong></div>
       </div>
-      <button id="reset" class="reset">Reset demo data</button>
+      <button id="reset" class="reset">Clear all app data</button>
     </section>
   </main>
 
@@ -203,44 +211,56 @@ const EX=[
 {id:"standingcalfraise",name:"Standing Calf Raise",equipment:"Machine",muscle:"Calves",image:"standing-calf-raise.webp"},
 {id:"seatedcalfraise",name:"Seated Calf Raise",equipment:"Machine",muscle:"Calves",image:"seated-calf-raise.webp"}
 ];
-const KEY="gymso-v1";
+const KEY="gymso-v1",STORAGE_VERSION=2;
+const DEMO_WORKOUT=["bench","row","lateral"];
+const DEMO_PLANS=[
+ {id:"push-day",name:"Push Day",exercises:[{exerciseId:"bench",sets:3},{exerciseId:"inclinebarbell",sets:3},{exerciseId:"lateral",sets:3}]},
+ {id:"pull-day",name:"Pull Day",exercises:[{exerciseId:"pulldown",sets:3},{exerciseId:"cablerow",sets:3},{exerciseId:"row",sets:3}]},
+ {id:"leg-day",name:"Leg Day",exercises:[{exerciseId:"squat",sets:3},{exerciseId:"rdl",sets:3},{exerciseId:"legpress",sets:3}]}
+];
+const DEMO_LOGS={
+ bench:[{w:185,r:10,d:false},{w:185,r:9,d:false},{w:185,r:"",d:false}],
+ row:[{w:115,r:10,d:false},{w:115,r:10,d:false},{w:115,r:"",d:false}],
+ lateral:[{w:20,r:12,d:false},{w:20,r:12,d:false},{w:20,r:"",d:false}]
+};
+const DEMO_HISTORY_IDS=new Set(["demo-aug-14","demo-aug-12"]);
 const DEFAULT={
- workout:["bench","row","lateral"],active:"bench",
+ storageVersion:STORAGE_VERSION,
+ workout:[],active:null,
  activePlanId:null,
- plans:[
-  {id:"push-day",name:"Push Day",exercises:[{exerciseId:"bench",sets:3},{exerciseId:"inclinebarbell",sets:3},{exerciseId:"lateral",sets:3}]},
-  {id:"pull-day",name:"Pull Day",exercises:[{exerciseId:"pulldown",sets:3},{exerciseId:"cablerow",sets:3},{exerciseId:"row",sets:3}]},
-  {id:"leg-day",name:"Leg Day",exercises:[{exerciseId:"squat",sets:3},{exerciseId:"rdl",sets:3},{exerciseId:"legpress",sets:3}]}
- ],
+ plans:[],
  draftStartedAt:null,
- logs:{
-  bench:[{w:185,r:10,d:false},{w:185,r:9,d:false},{w:185,r:"",d:false}],
-  row:[{w:115,r:10,d:false},{w:115,r:10,d:false},{w:115,r:"",d:false}],
-  lateral:[{w:20,r:12,d:false},{w:20,r:12,d:false},{w:20,r:"",d:false}]
- },
- history:[
-  {id:"demo-aug-14",startedAt:"2026-08-14T18:00:00.000Z",finishedAt:"2026-08-14T18:47:00.000Z",exercises:[
-   {exerciseId:"bench",sets:[{weight:185,reps:10},{weight:185,reps:9},{weight:185,reps:8}]},
-   {exerciseId:"row",sets:[{weight:115,reps:10},{weight:115,reps:10},{weight:115,reps:8}]}
-  ]},
-  {id:"demo-aug-12",startedAt:"2026-08-12T18:00:00.000Z",finishedAt:"2026-08-12T18:38:00.000Z",exercises:[
-   {exerciseId:"bench",sets:[{weight:180,reps:10},{weight:180,reps:10},{weight:180,reps:9}]}
-  ]}
- ]
+ logs:{},
+ history:[]
 };
 let state=load(),restStart=null,timerInt=null,raf=null,editingPlanId=null;
 const $=id=>document.getElementById(id);
 function copyDefault(){return JSON.parse(JSON.stringify(DEFAULT))}
 function legacyHistory(items){return items.map((h,i)=>{const d=new Date(`${h.date}, ${new Date().getFullYear()} 12:00:00`),x=EX.find(e=>e.name===h.exercise);return{id:`legacy-${i}`,startedAt:d.toISOString(),finishedAt:d.toISOString(),exercises:[{exerciseId:x?.id||h.exercise,sets:(h.sets||[]).map(s=>{const p=String(s).split("×");return{weight:Number(p[0].trim())||p[0].trim(),reps:Number((p[1]||"").trim())||(p[1]||"").trim()}})}]}})}
-function load(){try{const saved=JSON.parse(localStorage.getItem(KEY)),defaults=copyDefault();if(!saved)return defaults;return{workout:Array.isArray(saved.workout)?saved.workout:defaults.workout,active:saved.active||"bench",activePlanId:saved.activePlanId||null,plans:Array.isArray(saved.plans)?saved.plans:defaults.plans,draftStartedAt:saved.draftStartedAt||null,logs:saved.logs&&typeof saved.logs==="object"?saved.logs:{},history:Array.isArray(saved.history)?(saved.history.some(h=>h.exercise)?legacyHistory(saved.history):saved.history):[]}}catch{return copyDefault()}}
+function sameValue(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+function samePlan(a,b){return a?.id===b.id&&a?.name===b.name&&Array.isArray(a.exercises)&&a.exercises.length===b.exercises.length&&a.exercises.every((item,i)=>item.exerciseId===b.exercises[i].exerciseId&&Number(item.sets||3)===b.exercises[i].sets)}
+function load(){
+ try{
+  const raw=localStorage.getItem(KEY),defaults=copyDefault();if(!raw)return defaults;
+  const saved=JSON.parse(raw);if(!saved||typeof saved!=="object")return defaults;
+  const cleanDemo=(Number(saved.storageVersion)||1)<STORAGE_VERSION,seededWorkout=cleanDemo&&!saved.draftStartedAt&&sameValue(saved.workout,DEMO_WORKOUT)&&sameValue(saved.logs,DEMO_LOGS);
+  const workout=(seededWorkout?[]:(Array.isArray(saved.workout)?saved.workout:[])).filter(id=>ex(id));
+  let plans=Array.isArray(saved.plans)?saved.plans:[],history=Array.isArray(saved.history)?(saved.history.some(h=>h.exercise)?legacyHistory(saved.history):saved.history):[];
+  if(cleanDemo){plans=plans.filter(plan=>!DEMO_PLANS.some(demo=>samePlan(plan,demo)));history=history.filter(item=>!DEMO_HISTORY_IDS.has(item.id))}
+  const active=workout.includes(saved.active)?saved.active:(workout[0]||null),activePlanId=plans.some(plan=>plan.id===saved.activePlanId)?saved.activePlanId:null;
+  const next={storageVersion:STORAGE_VERSION,workout,active,activePlanId,plans,draftStartedAt:seededWorkout?null:(saved.draftStartedAt||null),logs:seededWorkout?{}:(saved.logs&&typeof saved.logs==="object"?saved.logs:{}),history};
+  if(!sameValue(saved,next))try{localStorage.setItem(KEY,JSON.stringify(next))}catch{}
+  return next
+ }catch{return copyDefault()}
+}
 function persist(next=state){try{localStorage.setItem(KEY,JSON.stringify(next));return true}catch{return false}}
 function save(){return persist(state)}
 function beginDraft(){if(!state.draftStartedAt)state.draftStartedAt=new Date().toISOString();save()}
 function ex(id){return EX.find(x=>x.id===id)}
-function current(){return ex(state.active)||EX[0]}
+function current(){const active=ex(state.active);return active&&state.workout.includes(active.id)?active:(ex(state.workout[0])||null)}
 function ensure(id){if(!state.logs[id])state.logs[id]=[{w:"",r:"",d:false},{w:"",r:"",d:false},{w:"",r:"",d:false}];return state.logs[id]}
 function render(){renderPlans();renderTabs();renderDetail();renderHistory();renderList($("library"),$("librarySearch").value,false);renderList($("pickerList"),$("pickerSearch").value,true)}
-function renderPlans(){const host=$("planList");host.innerHTML="";state.plans.forEach(plan=>{const row=document.createElement("div"),b=document.createElement("button"),edit=document.createElement("button"),names=plan.exercises.map(item=>ex(item.exerciseId)?.name).filter(Boolean);row.className="planrow";b.className="plancard "+(plan.id===state.activePlanId?"active":"");b.setAttribute("aria-label",`Open ${plan.name} workout plan`);const copy=document.createElement("div"),title=document.createElement("strong"),meta=document.createElement("span"),arrow=document.createElement("b");title.textContent=plan.name;meta.textContent=`${names.length} exercise${names.length===1?"":"s"} · ${names.join(" · ")}`;arrow.textContent="→";copy.append(title,meta);b.append(copy,arrow);b.onclick=()=>openPlan(plan.id);edit.className="planmanage";edit.textContent="Edit";edit.setAttribute("aria-label",`Edit ${plan.name} workout plan`);edit.onclick=()=>openEditPlan(plan.id);row.append(b,edit);host.appendChild(row)})}
+function renderPlans(){const host=$("planList");host.innerHTML=state.plans.length?"":'<p class="planempty">No saved plans yet.</p>';state.plans.forEach(plan=>{const row=document.createElement("div"),b=document.createElement("button"),edit=document.createElement("button"),names=plan.exercises.map(item=>ex(item.exerciseId)?.name).filter(Boolean);row.className="planrow";b.className="plancard "+(plan.id===state.activePlanId?"active":"");b.setAttribute("aria-label",`Open ${plan.name} workout plan`);const copy=document.createElement("div"),title=document.createElement("strong"),meta=document.createElement("span"),arrow=document.createElement("b");title.textContent=plan.name;meta.textContent=`${names.length} exercise${names.length===1?"":"s"} · ${names.join(" · ")}`;arrow.textContent="→";copy.append(title,meta);b.append(copy,arrow);b.onclick=()=>openPlan(plan.id);edit.className="planmanage";edit.textContent="Edit";edit.setAttribute("aria-label",`Edit ${plan.name} workout plan`);edit.onclick=()=>openEditPlan(plan.id);row.append(b,edit);host.appendChild(row)})}
 function openPlan(id){const plan=state.plans.find(p=>p.id===id);if(!plan)return;if(state.draftStartedAt&&!confirm("Replace your unfinished workout with this plan? The current draft will be cleared."))return;const items=plan.exercises.filter(item=>ex(item.exerciseId));if(!items.length)return;const logs={};items.forEach(item=>logs[item.exerciseId]=Array.from({length:Math.max(1,item.sets||3)},()=>({w:"",r:"",d:false})));state={...state,activePlanId:plan.id,workout:items.map(item=>item.exerciseId),active:items[0].exerciseId,draftStartedAt:null,logs};save();$("planStatus").textContent=`${plan.name} opened.`;render();$("tabs").scrollIntoView({behavior:"smooth",block:"start"})}
 function openSavePlan(){$("planName").value="";$("savePlanDialog").showModal();setTimeout(()=>$("planName").focus(),50)}
 function saveCurrentAsPlan(){const name=$("planName").value.trim();if(!name)return;const exercises=state.workout.filter(id=>ex(id)).map(id=>({exerciseId:id,sets:Math.max(1,ensure(id).length)}));if(!exercises.length)return;const plan={id:crypto.randomUUID?crypto.randomUUID():`plan-${Date.now()}`,name,exercises},next={...state,activePlanId:plan.id,plans:[...state.plans,plan]};if(!persist(next)){$("planStatus").textContent="Plan could not be saved on this device.";return}state=next;$("savePlanDialog").close();$("planStatus").textContent=`${name} saved.`;render()}
@@ -252,7 +272,7 @@ function renderTabs(){
  state.workout.forEach(id=>{const x=ex(id);if(!x)return;const b=document.createElement("button");b.className="chip "+(id===state.active?"active":"");b.textContent=x.name;b.onclick=()=>{state.active=id;save();render()};$("tabs").appendChild(b)})
 }
 function renderDetail(){
- const x=current();$("name").textContent=x.name;$("meta").textContent=(x.equipment+" · "+x.muscle).toUpperCase();renderStage(x);renderLast(x);renderSets(x)
+ const x=current(),empty=!x;$("emptyWorkout").hidden=!empty;$("tabs").hidden=empty;$("workoutDetail").hidden=empty;$("finishBar").hidden=empty;$("saveCurrentPlan").hidden=empty;if(empty)return;$("name").textContent=x.name;$("meta").textContent=(x.equipment+" · "+x.muscle).toUpperCase();renderStage(x);renderLast(x);renderSets(x)
 }
 function renderLast(x){
  const session=state.history.find(h=>h.exercises?.some(e=>e.exerciseId===x.id)),last=session?.exercises.find(e=>e.exerciseId===x.id);$("lastDate").textContent=session?formatDate(session.finishedAt):"No previous workout";
@@ -292,15 +312,15 @@ function finishWorkout(){const exercises=state.workout.map(id=>({exerciseId:id,s
 function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));document.querySelectorAll(".nav").forEach(n=>n.classList.toggle("active",n.dataset.screen===id));scrollTo({top:0,behavior:"smooth"})}
 function openPicker(){$("pickerSearch").value="";renderList($("pickerList"),"",true);$("picker").showModal()}
 document.querySelectorAll(".nav").forEach(n=>n.onclick=()=>show(n.dataset.screen));
-$("addExercise").onclick=openPicker;$("changeExercise").onclick=openPicker;$("closePicker").onclick=()=>$("picker").close();
+$("addExercise").onclick=openPicker;$("startWorkout").onclick=openPicker;$("changeExercise").onclick=openPicker;$("closePicker").onclick=()=>$("picker").close();
 $("saveCurrentPlan").onclick=openSavePlan;$("closePlanDialog").onclick=()=>$("savePlanDialog").close();$("savePlanForm").onsubmit=e=>{e.preventDefault();saveCurrentAsPlan()};
 $("closeEditPlanDialog").onclick=()=>$("editPlanDialog").close();$("editPlanForm").onsubmit=e=>{e.preventDefault();saveEditedPlan()};$("deletePlan").onclick=deleteEditedPlan;
 $("pickerSearch").oninput=e=>renderList($("pickerList"),e.target.value,true);$("librarySearch").oninput=e=>renderList($("library"),e.target.value,false);
-$("addSet").onclick=()=>{const a=ensure(state.active),last=a[a.length-1]||{w:""};a.push({w:last.w,r:"",d:false});beginDraft();renderSets(current())};
+$("addSet").onclick=()=>{const x=current();if(!x)return openPicker();const a=ensure(x.id),last=a[a.length-1]||{w:""};a.push({w:last.w,r:"",d:false});beginDraft();renderSets(x)};
 $("finishWorkout").onclick=finishWorkout;
 $("timer").onclick=()=>{restStart=null;clearInterval(timerInt);$("timer").textContent="00:00"};
-$("askForm").onsubmit=e=>{e.preventDefault();const q=$("askInput").value.trim();if(!q)return;const x=current(),sets=ensure(x.id).filter(s=>s.d).map(s=>`${s.w||"—"} lb × ${s.r||"—"}`).join(", ")||"No completed sets yet";$("answer").hidden=false;$("answer").innerHTML=`<strong>AI comes in the next phase.</strong><br><br>The app has already prepared the context it would send: <em>${x.name} · ${sets}</em><br><br>Your question: “${q.replace(/[<>]/g,"")}”`};
-$("reset").onclick=()=>{state=copyDefault();save();render();show("workout")};
+$("askForm").onsubmit=e=>{e.preventDefault();const q=$("askInput").value.trim(),x=current();if(!q||!x)return;const sets=ensure(x.id).filter(s=>s.d).map(s=>`${s.w||"—"} lb × ${s.r||"—"}`).join(", ")||"No completed sets yet";$("answer").hidden=false;$("answer").innerHTML=`<strong>AI comes in the next phase.</strong><br><br>The app has already prepared the context it would send: <em>${x.name} · ${sets}</em><br><br>Your question: “${q.replace(/[<>]/g,"")}”`};
+$("reset").onclick=()=>{if(!confirm("Clear all workouts, history, and saved plans from this device? This cannot be undone."))return;state=copyDefault();save();render();show("workout")};
 $("date").textContent=new Intl.DateTimeFormat("en-CA",{weekday:"long",month:"long",day:"numeric"}).format(new Date()).toUpperCase();
 render();
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
