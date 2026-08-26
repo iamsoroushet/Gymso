@@ -41,6 +41,7 @@
     .list{border-top:1px solid var(--line)}.exercise{width:100%;display:grid;grid-template-columns:84px 1fr 24px;gap:14px;align-items:center;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:14px 0}.thumb{width:84px;height:68px;display:grid;place-items:center;overflow:hidden}.thumb svg{width:100%;height:100%}.thumb img{display:block;width:84px;height:68px;object-fit:contain;background:#fff}.exercise h3{font-size:1rem;margin-bottom:5px}.exercise p{color:var(--muted);font-size:.82rem}
     .history{padding:18px 0;border-bottom:1px solid var(--line)}.historyhead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.history h3{margin-bottom:6px}.history>p,.historyhead p{font-size:.85rem;color:var(--muted)}.deleteworkout{border:0;background:transparent;color:#a11;padding:2px 0;text-decoration:underline;text-underline-offset:4px;font-size:.82rem;font-weight:600}.historyexercise{display:flex;justify-content:space-between;gap:16px;padding-top:12px;margin-top:12px;border-top:1px solid var(--line)}.historyexercise strong{font-size:.92rem}.historysets{color:var(--muted);font-size:.82rem;text-align:right}
     dialog{width:min(100% - 24px,720px);height:min(88vh,820px);border:1px solid var(--ink);border-radius:18px;padding:20px;background:#fff}dialog.compact{height:auto}dialog::backdrop{background:rgba(0,0,0,.28);backdrop-filter:blur(3px)}
+    dialog.exercisepreview{position:fixed;inset:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;padding:0;overflow:hidden;overscroll-behavior:contain}.exercisepreview::backdrop{background:#fff}.exerciseview{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:#fff}.exerciseviewhead{display:grid;grid-template-columns:auto minmax(0,1fr);gap:15px;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 20px 14px;border-bottom:1px solid var(--line)}.exerciseback{min-height:44px;border:1px solid var(--ink);border-radius:999px;background:#fff;padding:9px 13px;font-size:.82rem;font-weight:700}.exerciseviewhead h2{font-size:clamp(1.65rem,7vw,2.4rem);line-height:1;letter-spacing:-.035em}.exerciseviewimage{min-height:0;display:grid;place-items:center;overflow:auto;padding:16px 20px;background:#fff}.exerciseviewimage img{display:block;width:auto;max-width:100%;height:auto;max-height:100%;object-fit:contain}.exerciseviewaction{padding:14px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:#fff}.exerciseviewaction p{text-align:center;margin-top:9px;color:var(--muted);font-size:.8rem}
     .dialoghead{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px}.dialoghead h2{font-size:2rem}.dialoglist{max-height:calc(88vh - 180px);overflow:auto}.planeditlist{max-height:46vh;overflow:auto;border-top:1px solid var(--line);margin:10px 0 18px}.planedit{display:grid;grid-template-columns:24px minmax(0,1fr) 62px;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}.planedit span{font-size:.9rem}.planedit input[type=number]{width:62px;border:1px solid #bbb;border-radius:8px;padding:7px;text-align:center}.planedit input:disabled{opacity:.35}.dialogactions{display:grid;grid-template-columns:1fr 1.5fr;gap:10px}.deleteplan{border:1px solid #a11;border-radius:12px;background:#fff;color:#a11;font-weight:700}
     .settings{border-top:1px solid var(--line)}.setting{display:flex;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--line);gap:20px}.reset{margin-top:28px;width:100%;padding:12px;background:#fff;border:1px solid var(--ink)}
     @media(min-width:700px){.shell{padding-left:34px;padding-right:34px}.stage{min-height:360px}}
@@ -154,6 +155,22 @@
   <div id="pickerList" class="list dialoglist"></div>
 </dialog>
 
+<dialog id="exercisePreview" class="exercisepreview" aria-labelledby="exercisePreviewName">
+  <article class="exerciseview">
+    <div class="exerciseviewhead">
+      <button id="closeExercisePreview" class="exerciseback" type="button" aria-label="Back to exercises">← Back</button>
+      <div><p id="exercisePreviewMeta" class="eyebrow"></p><h2 id="exercisePreviewName"></h2></div>
+    </div>
+    <div class="exerciseviewimage">
+      <img id="exercisePreviewImage" src="" alt="">
+    </div>
+    <div class="exerciseviewaction">
+      <button id="addPreviewExercise" class="finish" type="button">Add to today's workout</button>
+      <p id="exercisePreviewStatus" aria-live="polite">Adds this exercise and opens it ready for your sets.</p>
+    </div>
+  </article>
+</dialog>
+
 <dialog id="savePlanDialog" class="compact">
   <div class="dialoghead">
     <div><p class="eyebrow">NEW PLAN</p><h2>Save workout</h2></div>
@@ -236,7 +253,7 @@ const DEFAULT={
  logs:{},
  history:[]
 };
-let state=load(),restStart=null,timerInt=null,raf=null,editingPlanId=null;
+let state=load(),restStart=null,timerInt=null,raf=null,editingPlanId=null,previewExerciseId=null;
 const $=id=>document.getElementById(id);
 function copyDefault(){return JSON.parse(JSON.stringify(DEFAULT))}
 function sameValue(a,b){return JSON.stringify(a)===JSON.stringify(b)}
@@ -268,7 +285,7 @@ function saveEditedPlan(){const plan=state.plans.find(p=>p.id===editingPlanId),n
 function deleteEditedPlan(){const plan=state.plans.find(p=>p.id===editingPlanId);if(!plan||!confirm(`Delete ${plan.name}? This cannot be undone.`))return;const next={...state,activePlanId:state.activePlanId===plan.id?null:state.activePlanId,plans:state.plans.filter(p=>p.id!==plan.id)};if(!persist(next)){$("editPlanError").textContent="Plan could not be deleted from this device.";return}state=next;$("editPlanDialog").close();$("planStatus").textContent=`${plan.name} deleted.`;render()}
 function renderTabs(){
  $("tabs").innerHTML="";
- state.workout.forEach(id=>{const x=ex(id);if(!x)return;const b=document.createElement("button");b.className="chip "+(id===state.active?"active":"");b.textContent=x.name;b.onclick=()=>{state.active=id;save();render()};$("tabs").appendChild(b)})
+ state.workout.forEach(id=>{const x=ex(id);if(!x)return;const b=document.createElement("button");b.className="chip "+(id===state.active?"active":"");b.dataset.exerciseId=id;b.textContent=x.name;b.onclick=()=>{state.active=id;save();render()};$("tabs").appendChild(b)})
 }
 function renderDetail(){
  const x=current(),empty=!x;$("emptyWorkout").hidden=!empty;$("tabs").hidden=empty;$("workoutDetail").hidden=empty;$("finishBar").hidden=empty;$("saveCurrentPlan").hidden=empty;if(empty)return;$("name").textContent=x.name;$("meta").textContent=(x.equipment+" · "+x.muscle).toUpperCase();renderStage(x);renderLast(x);renderSets(x)
@@ -297,11 +314,24 @@ function renderStage(x){
 function thumb(x){
  return `<img src="${x.image}" alt="" loading="lazy">`;
 }
+function addToWorkout(id){
+ const x=ex(id);if(!x)return;
+ if(!state.workout.includes(x.id)){state.workout.push(x.id);state.activePlanId=null;ensure(x.id);beginDraft()}
+ state.active=x.id;ensure(x.id);save();render();show("workout")
+}
+function openExercisePreview(id){
+ const x=ex(id);if(!x)return;previewExerciseId=x.id;
+ $("exercisePreviewName").textContent=x.name;$("exercisePreviewMeta").textContent=`${x.equipment} · ${x.muscle}`.toUpperCase();
+ $("exercisePreviewImage").src=x.image;$("exercisePreviewImage").alt=`${x.name} exercise guide showing movement, primary muscles, and secondary muscles`;
+ const added=state.workout.includes(x.id);$("addPreviewExercise").textContent=added?"Open in today's workout":"Add to today's workout";
+ $("exercisePreviewStatus").textContent=added?"This exercise is already in today's workout.":"Adds this exercise and opens it ready for your sets.";
+ $("exercisePreview").showModal();setTimeout(()=>$("closeExercisePreview").focus(),50)
+}
 function renderList(host,q,picker){
  q=(q||"").toLowerCase();host.innerHTML="";
  EX.filter(x=>(x.name+" "+x.equipment+" "+x.muscle).toLowerCase().includes(q)).forEach(x=>{
-  const b=document.createElement("button");b.className="exercise";b.innerHTML=`<span class="thumb">${thumb(x)}</span><span><h3>${x.name}</h3><p>${x.equipment} · ${x.muscle}</p></span><span>→</span>`;
-  b.onclick=()=>{if(!state.workout.includes(x.id)){state.workout.push(x.id);state.activePlanId=null;beginDraft()}state.active=x.id;ensure(x.id);save();if(picker)$("picker").close();show("workout");render()};host.appendChild(b)
+  const b=document.createElement("button");b.className="exercise";b.dataset.exerciseId=x.id;b.innerHTML=`<span class="thumb">${thumb(x)}</span><span><h3>${x.name}</h3><p>${x.equipment} · ${x.muscle}</p></span><span aria-hidden="true">→</span>`;
+  b.setAttribute("aria-label",`${picker?"Add":"View"} ${x.name}`);b.onclick=()=>{if(picker){$("picker").close();addToWorkout(x.id)}else openExercisePreview(x.id)};host.appendChild(b)
  })
 }
 function formatDate(value){const d=new Date(value);return new Intl.DateTimeFormat("en-CA",{month:"short",day:"numeric",year:d.getFullYear()===new Date().getFullYear()?undefined:"numeric"}).format(d)}
@@ -312,6 +342,7 @@ function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.to
 function openPicker(){$("pickerSearch").value="";renderList($("pickerList"),"",true);$("picker").showModal()}
 document.querySelectorAll(".nav").forEach(n=>n.onclick=()=>show(n.dataset.screen));
 $("addExercise").onclick=openPicker;$("startWorkout").onclick=openPicker;$("changeExercise").onclick=openPicker;$("closePicker").onclick=()=>$("picker").close();
+$("closeExercisePreview").onclick=()=>$("exercisePreview").close();$("addPreviewExercise").onclick=()=>{const id=previewExerciseId;$("exercisePreview").close();addToWorkout(id)};
 $("saveCurrentPlan").onclick=openSavePlan;$("closePlanDialog").onclick=()=>$("savePlanDialog").close();$("savePlanForm").onsubmit=e=>{e.preventDefault();saveCurrentAsPlan()};
 $("closeEditPlanDialog").onclick=()=>$("editPlanDialog").close();$("editPlanForm").onsubmit=e=>{e.preventDefault();saveEditedPlan()};$("deletePlan").onclick=deleteEditedPlan;
 $("pickerSearch").oninput=e=>renderList($("pickerList"),e.target.value,true);$("librarySearch").oninput=e=>renderList($("library"),e.target.value,false);
