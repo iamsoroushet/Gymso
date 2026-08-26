@@ -308,7 +308,7 @@ const DEFAULT={
  sessionNotes:{},
  settings:{restDurationSeconds:90,restAlerts:{sound:true,vibration:true}}
 };
-let state=load(),restEnd=null,timerInt=null,raf=null,editingPlanId=null,previewExerciseId=null,pickerMode="add",replaceTargetId=null,progressExerciseId=null,audioContext=null,restAlerted=false,noteSaveTimers={exercise:null,session:null};
+let state=load(),restEnd=null,timerInt=null,raf=null,editingPlanId=null,previewExerciseId=null,pickerMode="add",replaceTargetId=null,progressExerciseId=null,audioContext=null,restAlerted=false,noteSaveTimers={exercise:null,session:null},appServiceWorker=null;
 const $=id=>document.getElementById(id);
 function copyDefault(){return JSON.parse(JSON.stringify(DEFAULT))}
 function sameValue(a,b){return JSON.stringify(a)===JSON.stringify(b)}
@@ -446,7 +446,7 @@ $("moveEarlier").onclick=()=>moveCurrentExercise(-1);$("moveLater").onclick=()=>
 $("exerciseNotes").oninput=()=>scheduleNoteSave("exercise");$("sessionNote").oninput=()=>scheduleNoteSave("session");$("exerciseNotes").onblur=()=>flushNoteSave("exercise");$("sessionNote").onblur=()=>flushNoteSave("session");window.addEventListener("pagehide",()=>{flushNoteSave("exercise");flushNoteSave("session")});
 $("addSet").onclick=()=>{const x=current();if(!x)return openPicker("add");const a=ensure(x.id),last=a[a.length-1]||{w:""};a.push({w:last.w,r:"",d:false});beginDraft();renderSets(x)};
 $("finishWorkout").onclick=finishWorkout;
-$("timer").onclick=stopRestTimer;document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick()});
+$("timer").onclick=stopRestTimer;document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();checkForAppUpdate()}});
 $("progressExercise").onchange=e=>{progressExerciseId=e.target.value;renderProgress()};
 $("restDuration").onchange=e=>{const value=Number(e.target.value);if(!REST_OPTIONS.includes(value))return;if(saveRestSettings({restDurationSeconds:value})){stopRestTimer();renderSettings()}};$("restSound").onchange=e=>{if(!saveRestSettings({restAlerts:{sound:e.target.checked}}))e.target.checked=state.settings.restAlerts.sound};$("restVibration").onchange=e=>{if(!saveRestSettings({restAlerts:{vibration:e.target.checked}}))e.target.checked=state.settings.restAlerts.vibration};$("testRestAlert").onclick=()=>{primeAudio();if(!state.settings.restAlerts.sound&&!state.settings.restAlerts.vibration){$("dataStatus").textContent="Both rest alerts are turned off.";return}playRestAlert();$("dataStatus").textContent="Rest alert tested."};
 $("exportData").onclick=exportBackup;$("chooseImport").onclick=()=>$("importData").click();$("importData").onchange=async e=>{const file=e.target.files?.[0];$("dataStatus").textContent=file?"Checking backup…":"";try{await importBackup(file)}catch(error){$("dataStatus").textContent=error instanceof SyntaxError?"That file is not valid JSON.":(error?.message||"Backup could not be restored.")}finally{e.target.value=""}};
@@ -454,7 +454,8 @@ $("askForm").onsubmit=e=>{e.preventDefault();const q=$("askInput").value.trim(),
 $("reset").onclick=()=>{if(!confirm("Clear all workouts, history, saved plans, notes, and settings from this device? This cannot be undone."))return;const next=copyDefault();if(!persist(next)){$("dataStatus").textContent="App data could not be cleared on this device.";return}state=next;progressExerciseId=null;stopRestTimer();render();show("workout")};
 $("date").textContent=new Intl.DateTimeFormat("en-CA",{weekday:"long",month:"long",day:"numeric"}).format(new Date()).toUpperCase();
 render();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+async function checkForAppUpdate(){if(!appServiceWorker)return;try{await appServiceWorker.update()}catch{}}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).then(registration=>{appServiceWorker=registration;return registration.update()}).catch(()=>{});window.addEventListener("pageshow",checkForAppUpdate)}
 </script>
 </body>
 </html>
