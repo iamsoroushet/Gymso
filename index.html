@@ -47,6 +47,7 @@
     .settings{border-top:1px solid var(--line)}.setting{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--line);gap:20px}.settingcopy strong,.settingcopy small{display:block}.settingcopy small{margin-top:4px;color:var(--muted);font-size:.78rem;line-height:1.3}.setting select{min-width:112px;min-height:44px;border:1px solid var(--ink);border-radius:9px;background:#fff;padding:9px}.setting input[type=checkbox]{width:24px;height:24px}.settingsblock{margin-top:28px;border-top:1px solid var(--ink);padding-top:20px}.dataactions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.reset{min-height:44px;margin-top:28px;width:100%;padding:12px;background:#fff;border:1px solid #a11;color:#a11;border-radius:10px}.planbadge{display:inline-block!important;width:max-content;margin-bottom:6px;padding:3px 6px;border:1px solid currentColor;border-radius:999px;font-size:.58rem!important;letter-spacing:.09em;font-weight:700;color:inherit!important}
     @media(max-width:420px){.metrics{grid-template-columns:1fr}.metric{display:flex;justify-content:space-between;align-items:center}.metric strong{margin-top:0}.ordercontrols{grid-template-columns:1fr 1fr}.ordercontrols .danger{grid-column:1/-1}.dataactions{grid-template-columns:1fr}.daygrid{grid-template-columns:repeat(4,minmax(0,1fr))}.historyexercise{display:grid}.historysets{text-align:left}}
     @media(min-width:700px){.shell{padding-left:34px;padding-right:34px}.notesgrid{grid-template-columns:1fr 1fr}}
+    #exercisePreviewSurface{touch-action:pan-y pinch-zoom;overscroll-behavior-x:contain}#exercisePreviewImage{user-select:none;-webkit-user-drag:none}.exerciseviewbrowse{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:center;margin-bottom:12px}.exerciseviewbrowse p{margin:0;line-height:1.35}.exerciseviewbrowse span{display:block}.exercisebrowsebutton{width:44px;height:44px;border:1px solid var(--line);border-radius:50%;background:#fff;font-size:1.2rem}.visuallyhidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
   </style>
 </head>
@@ -210,10 +211,16 @@
       <button id="closeExercisePreview" class="exerciseback" type="button" aria-label="Back to exercises">← Back</button>
       <div><p id="exercisePreviewMeta" class="eyebrow"></p><h2 id="exercisePreviewName"></h2></div>
     </div>
-    <div class="exerciseviewimage">
-      <img id="exercisePreviewImage" src="" alt="">
+    <div id="exercisePreviewSurface" class="exerciseviewimage">
+      <img id="exercisePreviewImage" src="" alt="" draggable="false">
     </div>
     <div class="exerciseviewaction">
+      <div class="exerciseviewbrowse" role="group" aria-label="Browse exercises">
+        <button id="previousPreviewExercise" class="exercisebrowsebutton" type="button" aria-label="Previous exercise">←</button>
+        <p><span id="exercisePreviewPosition"></span><span id="exercisePreviewHint">Swipe left or right</span></p>
+        <button id="nextPreviewExercise" class="exercisebrowsebutton" type="button" aria-label="Next exercise">→</button>
+      </div>
+      <span id="exercisePreviewAnnouncement" class="visuallyhidden" role="status" aria-live="polite" aria-atomic="true"></span>
       <button id="addPreviewExercise" class="finish" type="button">Add to today's workout</button>
       <p id="exercisePreviewStatus" aria-live="polite">Adds this exercise and opens it ready for your sets.</p>
     </div>
@@ -332,6 +339,7 @@ const DEFAULT={
  settings:{restDurationSeconds:90,restAlerts:{sound:true,vibration:true}}
 };
 let state=load(),restEnd=null,timerInt=null,raf=null,editingPlanId=null,planCreationMode="blank",newPlanOrder=[],editPlanOrder=[],previewExerciseId=null,pickerMode="add",replaceTargetId=null,progressExerciseId=null,audioContext=null,restAlerted=false,noteSaveTimers={exercise:null,session:null},appServiceWorker=null;
+let previewExerciseIds=[],previewSwipe=null;
 const $=id=>document.getElementById(id);
 function copyDefault(){return JSON.parse(JSON.stringify(DEFAULT))}
 function sameValue(a,b){return JSON.stringify(a)===JSON.stringify(b)}
@@ -438,12 +446,34 @@ function removeCurrentExercise(){const x=current();if(!x)return false;if(exercis
 function replaceCurrentExercise(id){const old=current(),replacement=ex(id);if(!old||!replacement)return false;if(state.workout.includes(replacement.id)){$("pickerStatus").textContent=`${replacement.name} is already in today's workout.`;return false}if(exerciseHasData(old.id)&&!confirm(`Replace ${old.name}? Its entered sets and today's note will be lost.`))return false;const index=state.workout.indexOf(old.id),workout=[...state.workout],logs={...state.logs},sessionNotes={...state.sessionNotes};workout[index]=replacement.id;delete logs[old.id];delete sessionNotes[old.id];logs[replacement.id]=[{w:"",r:"",d:false},{w:"",r:"",d:false},{w:"",r:"",d:false}];const next={...state,workout,active:replacement.id,activePlanId:null,draftStartedAt:state.draftStartedAt||new Date().toISOString(),logs,sessionNotes};if(!persist(next)){$("pickerStatus").textContent="Exercise could not be replaced on this device.";return false}state=next;stopRestTimer();render();show("workout");$("workoutStatus").textContent=`${old.name} replaced with ${replacement.name}.`;return true}
 function discardWorkout(){if(!state.workout.length)return;if(workoutHasData()&&!confirm("Discard this unfinished workout? Entered sets and today's notes will be deleted."))return;const next={...state,workout:[],active:null,activePlanId:null,draftStartedAt:null,logs:{},sessionNotes:{}};if(!persist(next)){$("workoutStatus").textContent="Workout could not be discarded from this device.";return}state=next;stopRestTimer();render();$("planStatus").textContent="Unfinished workout discarded."}
 function openExercisePreview(id){
- const x=ex(id);if(!x)return;previewExerciseId=x.id;
+ const x=ex(id);if(!x)return;const query=String($("librarySearch").value||"").trim().toLowerCase();
+ previewExerciseIds=groupExercises(EX.filter(item=>exerciseSearchText(item).includes(query))).flatMap(category=>category.exercises.map(item=>item.id));
+ if(!previewExerciseIds.includes(x.id))previewExerciseIds=[x.id];previewExerciseId=x.id;previewSwipe=null;renderExercisePreview();
+ const dialog=$("exercisePreview");if(!dialog.open){dialog.showModal();setTimeout(()=>{if(dialog.open)$("closeExercisePreview").focus()},50)}
+}
+function renderExercisePreview(){
+ const x=ex(previewExerciseId);if(!x)return;const index=previewExerciseIds.indexOf(x.id),count=previewExerciseIds.length;
  $("exercisePreviewName").textContent=x.name;$("exercisePreviewMeta").textContent=`${x.equipment} · ${x.muscle}`.toUpperCase();
  $("exercisePreviewImage").src=x.image;$("exercisePreviewImage").alt=`${x.name} exercise guide showing movement, primary muscles, and secondary muscles`;
  const added=state.workout.includes(x.id);$("addPreviewExercise").textContent=added?"Open in today's workout":"Add to today's workout";
  $("exercisePreviewStatus").textContent=added?"This exercise is already in today's workout.":"Adds this exercise and opens it ready for your sets.";
- $("exercisePreview").showModal();setTimeout(()=>$("closeExercisePreview").focus(),50)
+ $("previousPreviewExercise").disabled=index<=0;$("nextPreviewExercise").disabled=index>=count-1;
+ $("exercisePreviewPosition").textContent=`${index+1} of ${count}`;$("exercisePreviewHint").textContent=count>1?"Swipe left or right":"Only matching exercise";
+ $("exercisePreviewAnnouncement").textContent=`${x.name}. Exercise ${index+1} of ${count}.`;
+}
+function stepExercisePreview(delta){
+ if(!$("exercisePreview").open||(delta!==-1&&delta!==1))return false;const index=previewExerciseIds.indexOf(previewExerciseId),target=index+delta;
+ previewSwipe=null;if(index<0||target<0||target>=previewExerciseIds.length)return false;previewExerciseId=previewExerciseIds[target];renderExercisePreview();return true
+}
+function beginPreviewSwipe(event){
+ if(!$("exercisePreview").open||event.isPrimary===false||(event.pointerType==="mouse"&&event.button!==0)||(window.visualViewport?.scale||1)>1){previewSwipe=null;return}
+ if(previewSwipe&&previewSwipe.pointerId!==event.pointerId){previewSwipe=null;return}
+ previewSwipe={pointerId:event.pointerId,x:event.clientX,y:event.clientY};try{$("exercisePreviewSurface").setPointerCapture?.(event.pointerId)}catch{}
+}
+function endPreviewSwipe(event){
+ const swipe=previewSwipe;if(!swipe||swipe.pointerId!==event.pointerId)return;previewSwipe=null;
+ if(!$("exercisePreview").open||(window.visualViewport?.scale||1)>1)return;const dx=event.clientX-swipe.x,dy=event.clientY-swipe.y;
+ if(Math.abs(dx)>=50&&Math.abs(dx)>Math.abs(dy)*1.5)stepExercisePreview(dx<0?1:-1)
 }
 function renderList(host,q,picker){
  q=String(q||"").trim().toLowerCase();host.innerHTML="";const replacing=picker&&pickerMode==="replace",old=ex(replaceTargetId),matches=EX.filter(x=>exerciseSearchText(x).includes(q)).filter(x=>!replacing||!state.workout.includes(x.id));
@@ -469,6 +499,14 @@ function openPicker(mode="add"){const x=current();pickerMode=mode==="replace"&&x
 document.querySelectorAll(".nav").forEach(n=>n.onclick=()=>show(n.dataset.screen));
 $("addExercise").onclick=()=>openPicker("add");$("startWorkout").onclick=()=>openPicker("add");$("changeExercise").onclick=()=>openPicker("replace");$("closePicker").onclick=()=>$("picker").close();
 $("closeExercisePreview").onclick=()=>$("exercisePreview").close();$("addPreviewExercise").onclick=()=>{const id=previewExerciseId;$("exercisePreview").close();addToWorkout(id)};
+$("previousPreviewExercise").onclick=()=>stepExercisePreview(-1);$("nextPreviewExercise").onclick=()=>stepExercisePreview(1);
+$("exercisePreviewSurface").onpointerdown=beginPreviewSwipe;$("exercisePreviewSurface").onpointerup=endPreviewSwipe;
+$("exercisePreviewSurface").onpointercancel=()=>{previewSwipe=null};$("exercisePreviewSurface").onlostpointercapture=()=>{previewSwipe=null};
+$("exercisePreview").onclose=()=>{if($("exercisePreview").open)return;previewSwipe=null;previewExerciseId=null;previewExerciseIds=[]};
+$("exercisePreview").onkeydown=event=>{
+ const target=event.target;if(!$("exercisePreview").open||event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||target?.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName||""))return;
+ if(event.key==="ArrowLeft"||event.key==="ArrowRight"){event.preventDefault();stepExercisePreview(event.key==="ArrowLeft"?-1:1)}
+};
 $("createPlan").onclick=()=>openSavePlan("blank");$("saveCurrentPlan").onclick=()=>openSavePlan("current");$("closePlanDialog").onclick=()=>$("savePlanDialog").close();$("savePlanForm").onsubmit=e=>{e.preventDefault();savePlanFromDialog()};
 $("closeEditPlanDialog").onclick=()=>$("editPlanDialog").close();$("editPlanForm").onsubmit=e=>{e.preventDefault();saveEditedPlan()};$("deletePlan").onclick=deleteEditedPlan;
 $("pickerSearch").oninput=e=>renderList($("pickerList"),e.target.value,true);$("librarySearch").oninput=e=>renderList($("library"),e.target.value,false);$("newPlanExerciseSearch").oninput=e=>filterPlanExerciseEditor($("newPlanExercises"),e.target.value);$("editPlanExerciseSearch").oninput=e=>filterPlanExerciseEditor($("editPlanExercises"),e.target.value);
