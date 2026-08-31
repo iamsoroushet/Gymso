@@ -29,9 +29,9 @@
     .detail{border-top:1px solid var(--line);padding-top:22px}.detailhead{display:flex;justify-content:space-between;gap:18px}.detailhead>div{min-width:0}.detailactions{display:flex;align-items:flex-start;gap:12px}.ordercontrols{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;padding:0 0 18px}.toolbutton{min-height:44px;border:1px solid var(--ink);border-radius:10px;background:#fff;padding:9px 12px;font-size:.8rem;font-weight:700}.toolbutton.danger{color:#a11;border-color:#a11}.text,.icon,.timer{min-height:44px}.icon{min-width:44px}
     .stage{margin:20px 0 26px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);height:clamp(300px,65vh,680px);height:clamp(300px,65dvh,680px);min-width:0;min-height:0;padding:16px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);place-items:center;overflow:hidden}.stage svg{width:min(100%,560px);max-height:100%}.stage img{display:block;width:100%;height:100%;min-width:0;min-height:0;object-fit:scale-down;object-position:center;background:#fff}
     .block{border-top:1px solid var(--line);padding:20px 0}.lastset{padding:10px 0;border-top:1px solid var(--line);font-size:1.02rem}.lastset:first-child{border-top:0}.notesgrid{display:grid;gap:18px}.notefield{display:grid;gap:8px}.notefield span{font-size:.7rem;letter-spacing:.11em;font-weight:700}.notefield textarea{width:100%;min-height:88px;resize:vertical;border:1px solid #bdbdbd;border-radius:12px;padding:12px;line-height:1.4;background:#fff}.notefield textarea:focus{outline:2px solid var(--ink);outline-offset:1px}.notesaved{text-align:left;margin-top:8px}.historynote{margin-top:9px;color:var(--muted);font-size:.82rem;line-height:1.4}
-    .thead,.setrow{display:grid;grid-template-columns:42px 1fr 1fr 42px;gap:10px;align-items:center}.thead{font-size:.67rem;letter-spacing:.11em;font-weight:700;padding-bottom:8px}.setrow{border-top:1px solid var(--line);padding:10px 0}
+    .thead,.setrow{display:grid;grid-template-columns:42px 1fr 1fr 84px;gap:10px;align-items:center}.thead{font-size:.67rem;letter-spacing:.11em;font-weight:700;padding-bottom:8px}.thead span:last-child{text-align:center}.setrow{border-top:1px solid var(--line);padding:10px 0}
     .setrow input{width:100%;border:1px solid #bdbdbd;border-radius:10px;padding:10px 8px;text-align:center;font-size:1.05rem;background:#fff}.setrow input:focus{outline:2px solid var(--ink);outline-offset:1px}.setfield{min-width:0;display:grid;gap:5px}.setfieldunit{font-size:.65rem;letter-spacing:.08em;color:var(--muted);text-align:center}.sethint{font-size:.8rem;line-height:1.4;color:var(--muted);margin-bottom:12px}
-    .done{width:34px;height:34px;border:1.5px solid var(--ink);border-radius:50%;background:#fff}.done.on{background:var(--ink);color:#fff}.done.on:after{content:"✓"}
+    .setactions{display:flex;align-items:center;justify-content:center;gap:6px}.done{flex:0 0 auto;width:34px;height:34px;border:1.5px solid var(--ink);border-radius:50%;background:#fff}.done.on{background:var(--ink);color:#fff}.done.on:after{content:"✓"}.deleteset{flex:0 0 auto;width:44px;height:44px;border:0;border-radius:9px;background:transparent;color:#a11;font-size:1.4rem;line-height:1}.deleteset:hover{background:#fff1f1}
     .addset{width:100%;border:0;background:#fff;padding:16px 0 0;font-weight:600}.rest{display:flex;justify-content:space-between;align-items:center}.timer{border:0;background:#fff;font-size:2rem;font-weight:600;letter-spacing:-.05em}
     .ask{display:grid;grid-template-columns:1fr 44px;border:1px solid #bdbdbd;border-radius:12px;overflow:hidden;margin-top:12px}.ask input{border:0;outline:none;padding:13px}.ask button{border:0;border-left:1px solid var(--line);background:#fff;font-size:1.25rem}.answer{margin-top:12px;background:var(--soft);padding:14px;border-radius:12px;font-size:.9rem;line-height:1.45}
     .finishbar{border-top:1px solid var(--ink);padding:24px 0 4px}.finish{width:100%;border:1px solid var(--ink);border-radius:12px;background:var(--ink);color:#fff;padding:15px;font-weight:700}.secondary{width:100%;min-height:44px;margin-top:10px;border:1px solid var(--ink);border-radius:12px;background:#fff;padding:12px;font-weight:700}.secondary.danger{color:#a11;border-color:#a11}.status{min-height:18px;margin-top:10px;text-align:center;color:var(--muted);font-size:.82rem}
@@ -99,10 +99,11 @@
         </div>
 
         <div id="exerciseReview" class="exercisereview" hidden>
-          <p>These sets are finished. Review them here, or resume this exercise to make changes or add more sets.</p>
+          <p>These sets are finished. Review them here, edit the logged sets, or delete this exercise from today’s workout.</p>
           <div class="reviewactions">
             <button id="closeExerciseReview" class="toolbutton" type="button">Back to current exercise</button>
-            <button id="resumeExercise" class="toolbutton" type="button">Resume exercise</button>
+            <button id="resumeExercise" class="toolbutton" type="button">Edit sets</button>
+            <button id="deleteLoggedExercise" class="toolbutton danger" type="button">Delete exercise</button>
           </div>
         </div>
 
@@ -116,7 +117,7 @@
 
         <div class="block">
           <p id="setEntryHint" class="sethint" hidden></p>
-          <div class="thead"><span>SET</span><span id="setFirstLabel">LB</span><span id="setSecondLabel">REPS</span><span></span></div>
+          <div class="thead"><span>SET</span><span id="setFirstLabel">REPS</span><span id="setSecondLabel">LB</span><span>ACTIONS</span></div>
           <div id="setRows"></div>
           <button id="addSet" class="addset">+ Add set</button>
           <div class="exercisecompletion">
@@ -508,7 +509,19 @@ function startFreshWorkout(){if(!state.workout.length)return false;if(!canStartF
 function commitWorkoutTransition(next,errorId="workoutStatus",message="Workout changes could not be saved on this device."){if(!persist(next)){$(errorId).textContent=message;return false}state=next;cancelNoteSaves();return true}
 function selectWorkoutExercise(id){if(!state.workout.includes(id)||!ex(id))return false;const completed=state.completedExerciseIds.includes(id);if(!completed&&!commitWorkoutTransition({...withPendingNotes(),active:id}))return false;reviewExerciseId=completed?id:null;render();focusWorkout();return true}
 function closeExerciseReview(){reviewExerciseId=null;render();focusWorkout()}
-function resumeExercise(){if(!isExerciseReview())return false;const id=reviewExerciseId,next={...withPendingNotes(),completedExerciseIds:state.completedExerciseIds.filter(item=>item!==id),active:id};if(!commitWorkoutTransition(next,"exerciseCompletionStatus","This exercise could not be resumed on this device."))return false;reviewExerciseId=null;stopRestTimer();render();focusWorkout();return true}
+function resumeExercise(){if(!isExerciseReview())return false;const id=reviewExerciseId,x=ex(id),next={...withPendingNotes(),completedExerciseIds:state.completedExerciseIds.filter(item=>item!==id),active:id};if(!commitWorkoutTransition(next,"exerciseCompletionStatus","This exercise could not be opened for editing on this device."))return false;reviewExerciseId=null;stopRestTimer();render();$("exerciseCompletionStatus").textContent=`Editing ${x.name}. Finish the exercise again when you’re done.`;($("setRows").querySelector("input")||$("addSet")).focus({preventScroll:true});return true}
+function removeReviewedExercise(){
+ if(!isExerciseReview())return false;const id=reviewExerciseId,x=ex(id),source=withPendingNotes();
+ if(!confirm(`Delete ${x.name} from this workout? Its logged sets and today’s note will be deleted. Saved History will not change. This cannot be undone.`))return false;
+ const workout=source.workout.filter(item=>item!==id),completedExerciseIds=source.completedExerciseIds.filter(item=>item!==id),logs={...source.logs},sessionNotes={...source.sessionNotes};delete logs[id];delete sessionNotes[id];const unfinished=workout.filter(item=>!completedExerciseIds.includes(item)),active=unfinished.includes(source.active)?source.active:(unfinished[0]||null),next={...source,workout,active,completedExerciseIds,activePlanId:null,draftStartedAt:workout.length?source.draftStartedAt:null,logs,sessionNotes};
+ if(!commitWorkoutTransition(next,"exerciseCompletionStatus","This logged exercise could not be deleted from this device."))return false;reviewExerciseId=null;render();const message=`${x.name} deleted from this workout.`;$("workoutStatus").textContent=message;$("planStatus").textContent=message;(workout.length?$("workoutProgress"):$("startWorkout")).focus({preventScroll:true});return true
+}
+function deleteExerciseSet(id,index){
+ if(isExerciseReview()||activeExercise()?.id!==id)return false;const x=ex(id),source=withPendingNotes(),rows=source.logs[id]||[],target=rows[index];if(!x||!target)return false;
+ if(draftSetHasData(target)&&!confirm(`Delete set ${index+1} from ${x.name}? Its logged ${isDurationSet(target)?"time":"reps and weight"} will be removed.`))return false;
+ const nextRows=rows.filter((_,rowIndex)=>rowIndex!==index);if(!nextRows.length)nextRows.push(blankSet(id));const next={...source,logs:{...source.logs,[id]:nextRows}};
+ if(!commitWorkoutTransition(next,"exerciseCompletionStatus","This set could not be deleted from this device."))return false;renderSets(x);$("exerciseCompletionStatus").textContent=`Set ${index+1} deleted.`;const buttons=[...$("setRows").querySelectorAll(".deleteset")],targetButton=buttons[Math.min(index,buttons.length-1)]||$("addSet");targetButton.focus({preventScroll:true});return true
+}
 function finishExercise(){
  if(isExerciseReview())return false;const x=activeExercise();if(!x)return false;const source=withPendingNotes(),rows=source.logs[x.id]||[];$("exerciseCompletionStatus").textContent="";
  const invalidInput=[...$("setRows").querySelectorAll("input")].find(input=>input.validity?.badInput);if(invalidInput){$("exerciseCompletionStatus").textContent="Finish entering a valid number before completing this exercise.";invalidInput.focus();return false}
@@ -526,7 +539,7 @@ function renderLast(x){
 function renderSets(x){
  const host=$("setRows"),review=isExerciseReview(),rows=review?(state.logs[x.id]||[]):ensure(x.id);
  const timed=rows.length?rows.every(isDurationSet):x.tracking==="duration",mixed=rows.some(isDurationSet)&&rows.some(set=>!isDurationSet(set));
- $("setFirstLabel").textContent=mixed?"":timed?"MIN":"LB";$("setSecondLabel").textContent=mixed?"":timed?"SEC":"REPS";
+ $("setFirstLabel").textContent=mixed?"":timed?"MIN":"REPS";$("setSecondLabel").textContent=mixed?"":timed?"SEC":"LB";
  const hint=$("setEntryHint");hint.hidden=!timed&&!mixed&&x.tracking!=="duration";hint.textContent=mixed?"Each row keeps its original log type. Check the units shown above each entry.":timed?"Enter minutes and seconds for each set. Leave an unused field blank for zero.":"These earlier rep entries are kept as recorded. New sets use minutes and seconds.";
  $("askInput").placeholder=timed?"How did this timed set compare?":"Why did my reps drop?";
  host.innerHTML="";
@@ -535,7 +548,7 @@ function renderSets(x){
   function field(key,name,unit,min,step,inputMode){
    const label=document.createElement("label"),caption=document.createElement("span"),input=document.createElement("input");label.className="setfield";caption.className=mixed?"setfieldunit":"visuallyhidden";caption.textContent=unit;input.type="number";input.min=String(min);input.step=step;input.inputMode=inputMode;if(name==="seconds")input.max="59";input.placeholder="—";input.value=s[key]??"";input.readOnly=review;input.dataset.setIndex=i;input.dataset.setField=name;input.setAttribute("aria-label",x.name+" set "+(i+1)+" "+(name==="weight"?"weight in pounds":name==="reps"?"repetitions":name));input.oninput=()=>{if(isExerciseReview()||activeExercise()?.id!==x.id)return;s[key]=input.value;$("exerciseCompletionStatus").textContent="";beginDraft()};label.append(caption,input);return label
   }
-  const first=duration?field("minutes","minutes","MIN",0,"1","numeric"):field("w","weight","LB",0,"any","decimal"),second=duration?field("seconds","seconds","SEC",0,"1","numeric"):field("r","reps","REPS",1,"1","numeric"),d=document.createElement("button");
+  const first=duration?field("minutes","minutes","MIN",0,"1","numeric"):field("r","reps","REPS",1,"1","numeric"),second=duration?field("seconds","seconds","SEC",0,"1","numeric"):field("w","weight","LB",0,"any","decimal"),actions=document.createElement("div"),d=document.createElement("button"),remove=document.createElement("button");actions.className="setactions";
   d.type="button";d.className="done "+(s.d?"on":"");d.disabled=review;d.setAttribute("aria-label",(review?(s.d?"Completed":"Uncompleted"):(s.d?"Reopen":"Complete"))+" set "+(i+1));d.setAttribute("aria-pressed",String(s.d));
   d.onclick=()=>{
    if(isExerciseReview()||activeExercise()?.id!==x.id)return;
@@ -545,7 +558,7 @@ function renderSets(x){
    }
    primeAudio();s.d=!s.d;if(s.d)startTimer();beginDraft();renderSets(x)
   };
-  row.append(n,first,second,d);host.appendChild(row)
+  remove.type="button";remove.className="deleteset";remove.hidden=review;remove.textContent="×";remove.setAttribute("aria-label",`Delete set ${i+1} from ${x.name}`);remove.onclick=()=>deleteExerciseSet(x.id,i);actions.append(d,remove);row.append(n,first,second,actions);host.appendChild(row)
  })
 }
 function renderNotes(x){const source=withPendingNotes(),review=isExerciseReview();$("exerciseNotes").value=source.exerciseNotes[x.id]||"";$("sessionNote").value=source.sessionNotes[x.id]||"";$("exerciseNotes").dataset.noteFor=x.id;$("sessionNote").dataset.noteFor=x.id;$("exerciseNotes").readOnly=review;$("sessionNote").readOnly=review;$("noteStatus").textContent=""}
@@ -702,7 +715,7 @@ $("pickerSearch").oninput=e=>renderList($("pickerList"),e.target.value,true);$("
 $("moveEarlier").onclick=()=>moveCurrentExercise(-1);$("moveLater").onclick=()=>moveCurrentExercise(1);$("removeExercise").onclick=removeCurrentExercise;$("discardWorkout").onclick=discardWorkout;
 $("exerciseNotes").oninput=()=>scheduleNoteSave("exercise");$("sessionNote").oninput=()=>scheduleNoteSave("session");$("exerciseNotes").onblur=()=>flushNoteSave("exercise");$("sessionNote").onblur=()=>flushNoteSave("session");window.addEventListener("pagehide",()=>{flushNoteSave("exercise");flushNoteSave("session")});
 $("addSet").onclick=()=>{if(isExerciseReview())return;const x=activeExercise();if(!x)return openPicker("add");const a=ensure(x.id),last=a[a.length-1],next=blankSet(x.id);if(!isDurationSet(next)&&last&&!isDurationSet(last))next.w=last.w;a.push(next);beginDraft();renderSets(x)};
-$("finishExercise").onclick=finishExercise;$("resumeExercise").onclick=resumeExercise;$("closeExerciseReview").onclick=closeExerciseReview;
+$("finishExercise").onclick=finishExercise;$("resumeExercise").onclick=resumeExercise;$("deleteLoggedExercise").onclick=removeReviewedExercise;$("closeExerciseReview").onclick=closeExerciseReview;
 $("saveCompletedWorkout").onclick=()=>{if(!finishWorkout())$("workoutStatus").scrollIntoView({block:"center"})};
 $("finishWorkout").onclick=finishWorkout;
 $("timer").onclick=stopRestTimer;document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();checkForAppUpdate()}});
