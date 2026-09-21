@@ -153,8 +153,7 @@
       <section id="workoutAllDone" class="workoutalldone" hidden>
         <p class="eyebrow">ALL EXERCISES FINISHED</p>
         <h3>Workout complete.</h3>
-        <p class="muted">Your sets are saved on this device. Review an exercise below, add another, or save this workout to History.</p>
-        <button id="saveCompletedWorkout" class="secondary" type="button">Save workout to History</button>
+        <p class="muted">Your sets are saved on this device. Review an exercise below, add another, or finish the workout session to save it to History.</p>
       </section>
       <section id="upNextPanel" class="workoutqueue" aria-labelledby="upNextHeading" hidden>
         <h3 id="upNextHeading">Up next <span id="upNextCount"></span></h3>
@@ -165,7 +164,7 @@
         <div id="completedExerciseList" class="workoutlist"></div>
       </section>
       <div id="finishBar" class="finishbar" hidden>
-        <button id="finishWorkout" class="finish">Finish Workout</button>
+        <button id="finishWorkout" class="finish" type="button">Finish the workout session</button>
         <button id="discardWorkout" class="secondary danger" type="button" data-action="discard-workout">Discard unfinished workout</button>
         <p id="workoutStatus" class="status" aria-live="polite"></p>
       </div>
@@ -375,7 +374,8 @@ const EX=[
 {id:"reardeltpecdeck",name:"Rear Delt Pec Deck",equipment:"Machine",muscle:"Shoulders",aliases:"reverse pec deck rear delt machine rear deltoid fly reverse fly machine",image:"rear-delt-pec-deck-v38.webp"},
 {id:"chestpressmachine",name:"Chest Press Machine",equipment:"Machine",muscle:"Chest",aliases:"machine chest press seated chest press horizontal chest press",image:"chest-press-machine-v37.webp"},
 {id:"kneelingezbarwristcurlcombo",name:"Kneeling EZ-Bar Wrist Curl Combo",equipment:"EZ-Bar & Bench",muscle:"Forearms",aliases:"ez bar forearm curl wrist curl reverse wrist curl palms up palms down front forearm back forearm barbell wrist curl kneeling bench wrist curl",image:"kneeling-ez-bar-wrist-curl-combo-v40.webp"},
-{id:"russiantwist",name:"Russian Twist",equipment:"Bodyweight",muscle:"Core",aliases:"russian twists bodyweight russian twist seated torso twist seated core twist seated oblique twist floor twist",image:"russian-twist-v42.webp"}
+{id:"russiantwist",name:"Russian Twist",equipment:"Bodyweight",muscle:"Core",aliases:"russian twists bodyweight russian twist seated torso twist seated core twist seated oblique twist floor twist",image:"russian-twist-v42.webp"},
+{id:"standingezbarreversecurl",name:"Standing EZ-Bar Reverse Curl",equipment:"EZ-Bar",muscle:"Forearms",aliases:"standing ez bar forearm raise standing forearm ez bar raise reverse grip ez bar curl overhand ez bar curl brachioradialis curl",image:"standing-ez-bar-reverse-curl-v43.webp"}
 ];
 const EXERCISE_CATEGORIES=["Chest","Back","Shoulders","Biceps","Forearms","Triceps","Legs & Glutes","Calves","Core","Full Body","Cardio"];
 const MUSCLE_CATEGORIES={"Legs":"Legs & Glutes","Posterior Chain":"Legs & Glutes","Quads & Glutes":"Legs & Glutes","Quadriceps":"Legs & Glutes","Hamstrings":"Legs & Glutes","Glutes":"Legs & Glutes","Adductors":"Legs & Glutes","Biceps & Forearms":"Biceps","Upper Back & Shoulders":"Shoulders","Lower Back & Glutes":"Back"};
@@ -519,7 +519,7 @@ function renderTabs(){
  upcoming.forEach(id=>appendExercise(id,$("tabs"),false));completed.forEach(id=>appendExercise(id,$("completedExerciseList"),true))
 }
 function renderDetail(){
- const x=current(),empty=!state.workout.length,review=isExerciseReview(),active=activeExercise();$("emptyWorkout").hidden=!empty;$("workoutProgress").hidden=empty;$("orderControls").hidden=!x||review;$("workoutDetail").hidden=!x;$("finishBar").hidden=empty;$("saveCurrentPlan").hidden=empty;$("workoutAllDone").hidden=empty||!!x;$("finishWorkout").hidden=!empty&&!x;$("finishWorkout").textContent=active?"Finish Workout":"Save workout to History";
+ const x=current(),empty=!state.workout.length,review=isExerciseReview(),active=activeExercise();$("emptyWorkout").hidden=!empty;$("workoutProgress").hidden=empty;$("orderControls").hidden=!x||review;$("workoutDetail").hidden=!x;$("finishBar").hidden=empty;$("saveCurrentPlan").hidden=empty;$("workoutAllDone").hidden=empty||!!x;$("finishWorkout").hidden=empty;
  $("workoutPosition").textContent=review?"COMPLETED · REVIEW":active?"CURRENT EXERCISE":"WORKOUT SUMMARY";$("workoutCompletionCount").textContent=`${state.completedExerciseIds.length} of ${state.workout.length} exercise${state.workout.length===1?"":"s"} finished`;$("exerciseCompletionStatus").textContent="";if(!x){renderStartFresh();return}
  $("exerciseReview").hidden=!review;$("closeExerciseReview").textContent=active?`Back to ${active.name}`:"Back to workout summary";$("changeExercise").hidden=review;$("addSet").hidden=review;$("finishExercise").hidden=review;$("exerciseRest").hidden=review;$("finishExercise").textContent=state.workout.length-state.completedExerciseIds.length>1?"Finish exercise & next →":"Finish exercise";
  const index=state.workout.indexOf(x.id);$("moveEarlier").disabled=index<=0;$("moveLater").disabled=index<0||index>=state.workout.length-1;["moveEarlier","moveLater","removeExercise","changeExercise"].forEach(id=>$(id).dataset.exerciseId=x.id);
@@ -763,7 +763,6 @@ $("moveEarlier").onclick=()=>moveCurrentExercise(-1);$("moveLater").onclick=()=>
 $("exerciseNotes").oninput=()=>scheduleNoteSave("exercise");$("sessionNote").oninput=()=>scheduleNoteSave("session");$("exerciseNotes").onblur=()=>flushNoteSave("exercise");$("sessionNote").onblur=()=>flushNoteSave("session");window.addEventListener("pagehide",()=>{flushNoteSave("exercise");flushNoteSave("session")});
 $("addSet").onclick=()=>{if(isExerciseReview())return;const x=activeExercise();if(!x)return openPicker("add");const a=ensure(x.id),last=a[a.length-1],next=blankSet(x.id);if(!isDurationSet(next)&&last&&!isDurationSet(last))next.w=last.w;a.push(next);beginDraft();renderSets(x)};
 $("finishExercise").onclick=finishExercise;$("resumeExercise").onclick=resumeExercise;$("deleteLoggedExercise").onclick=removeReviewedExercise;$("closeExerciseReview").onclick=closeExerciseReview;
-$("saveCompletedWorkout").onclick=()=>{if(!finishWorkout())$("workoutStatus").scrollIntoView({block:"center"})};
 $("finishWorkout").onclick=finishWorkout;
 $("timer").onclick=stopRestTimer;document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();checkForAppUpdate()}});
 $("progressExercise").onchange=e=>{progressExerciseId=e.target.value;renderProgress()};
